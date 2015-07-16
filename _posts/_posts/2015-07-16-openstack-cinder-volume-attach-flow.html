@@ -1,0 +1,23 @@
+---
+layout: post
+title: OpenStack Cinder - Volume Attach flow
+date: 2015-07-16 03:46:12.000000000 -06:00
+categories: []
+tags: []
+status: draft
+type: post
+published: false
+meta: {}
+author:
+  login: jgriffith8
+  email: john.griffith8@gmail.com
+  display_name: jgriffith8
+  first_name: ''
+  last_name: ''
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<h2><span style="color:#ff6600;">Intro</span></h2>
+<p>One specific topic that has come up a number of times in the past few weeks is "how the attach" process works in Cinder.  Given that this has come up a number of times, and there's some question about whether it does things correctly or not, I thought I'd take the opportunity to trace through the process from Cinder's perspective and write it up here.  Hopefully new Cinder contributors (or just anybody that's curious) will find this helpful.</p>
+<p>So first, Cinder has a reference implementation that's built in.  The whole point of a reference is of course to be used as the standard and as... well, a reference.  So let's take a look at the nitty gritty of Cinder's attach process using the LVM driver.  Note that this is going to focus on the order of events and what happens on the Cinder side.  In a follow up post I'll go through the same steps from Nova's perspective and show how these calls are generated.  With that, let's get going.</p>
+<p>The first thing to point out is that the process of attaching a volume to a compute instance doesn't include a ton of work on the Nova side.  Most of the mechanics</p>
