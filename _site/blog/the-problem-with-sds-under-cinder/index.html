@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html class="fuelux" lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>The problem with SDS under Cinder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://fuelcdn.com/fuelux/2.2/css/fuelux.css" rel="stylesheet" /> 
+	<link href="http://fuelcdn.com/fuelux/2.2/css/fuelux-responsive.css" rel="stylesheet" />
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" type="text/javascript"></script>
+	<script src="http://fuelcdn.com/fuelux/2.2/loader.min.js" type="text/javascript"></script>
+    <link href="/css/docs.css" rel="stylesheet">
+    <link href="/js/google-code-prettify/prettify.css" rel="stylesheet">	
+	<link rel="shortcut icon" href="/favicon.ico">    
+  </head>
+  <body data-spy="scroll" data-target=".subnav" data-offset="50">
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+	<div class="container">
+	  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	  </a>
+	  <a class="brand" href="http://j-griffith.github.com">My blog posts</a>
+	  <div class="nav-collapse">
+		<ul class="nav">
+		  <li class="">
+			<a href="http://j-griffith.github.com"><i class="icon-home"></i> Home</a>
+		  </li>
+		  <li class="dropdown">
+			<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-comment"></i> Social <b class="caret"></b></a>
+				<ul class="dropdown-menu">
+					<li class=""><a href="http://www.twitter.com/jdg_8" rel="tooltip" title="Go to twitter.com/jdg_8" target="_blank">Twitter</a></li>
+					<li class=""><a href="http://github.com/j-griffith" rel="tooltip" title="Go to github.com/j-griffith" target="_blank">GitHub</a></li>
+					<li class="divider"></li>
+				</ul>
+			 </li>
+		<li class="dropdown">
+			<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-list"></i> Projects <b class="caret"></b></a>
+				<ul class="dropdown-menu">
+				</ul>
+			 </li>
+		</ul>
+	  </div>
+	</div>
+  </div>
+</div>
+  
+	<div class="container">	
+		<div class="marketing">
+		<div class="content">    
+	<script type="text/javascript">
+		/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+		var disqus_shortname = 'ericjones'; // required: replace example with your forum shortname
+		var disqus_identifier = '/blog/the-problem-with-sds-under-cinder';
+		var disqus_url = 'http://erjjones.github.com/blog/the-problem-with-sds-under-cinder';
+
+		/* * * DON'T EDIT BELOW THIS LINE * * */
+		(function () {
+			var s = document.createElement('script'); s.async = true;
+			s.type = 'text/javascript';
+			s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+			(document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+		}());
+	</script>
+	
+<div class="row">	
+	<div class="span9 column">
+		<p><h1>The problem with SDS under Cinder</h1></p>	
+	</div>
+</div>		
+<div class="row">	
+	<div class="span3 column">
+		<h5><strong>May 16, 2014 <small>.  . <a href="http://erjjones.github.com/blog/the-problem-with-sds-under-cinder#disqus_thread" data-disqus-identifier="/blog/the-problem-with-sds-under-cinder">Comments</a></small></strong>
+		<br/><small>Tags:  </small><br/><br/>
+		<a href="https://twitter.com/share" class="twitter-share-button" data-via="erjjones">Tweet</a> <g:plusone size="medium"></g:plusone></h5>
+	</div>		
+	<div class="span6 column">
+		<p class="pull-right"> <a href="/blog/introducing-poole" title="Previous Post: Introducing Poole"><i class="icon-chevron-left"></i></a> 	    	<a href="/blog/the-problem-with-sds-under-cinder-part-2" title="Next Post: The Problem with SDS under Cinder - Part 2"><i class="icon-chevron-right"></i></a> 	 </p>  
+	</div>	
+</div>
+<div class="row">
+	<div class="span9 column">
+		<hr>
+	</div>
+</div>
+
+
+    <p>It’s been a great Summit here in Atlanta, we’ve had one of the most exciting and energetic Summit’s that I’ve had the opportunity to participate in so far.  Now that we’ve cleared the Exhibit hall, the booths are gone and most of the marketing and sales folks are on a plane heading home, it’s time for the Developer Community to get to work.</p>
+<p>&nbsp;</p>
+<p>On the Cinder side we have quite a bit of work to do and I expect some great brainstorming in the Design Sessions on Thursday and Friday.  One topic in particular that is on the agenda is “What is a Cinder Driver”.  This session in my opinion is perhaps the most critical session we’ll have this week and the decisions that come out of it will have a significant impact on the future of Cinder.</p>
+<p>&nbsp;</p>
+<p>The reason for this session is to try and get some consensus around how to deal with the most recent trend that I’m seeing in the Cinder community.  The latest trend from a number of the larger storage vendors is to implement a Software Defined Storage “driver”.  The design here is to implement a generalized driver, that acts as an interface to an external Controller that implements an abstraction very similar to what Cinder is already intended to provide.  This model duplicates a significant amount of code that exists in Cinder.  The Controller handles scheduling, pooling and abstraction of whatever supported devices For those that aren’t familiar, there are a number of examples that can be found on the web, but in short if you’re familiar with Cinder, you’ll recognize it as almost a duplicate pretty quickly.</p>
+<p>&nbsp;</p>
+<p>From the perspective of a Vendor that builds this Software Package and implements the driver in Cinder this has a number of advantages.  The primary advantage is of course they have a Software Defined Storage implementation that they can sell to customers.  In addition, from an OpenStack/Cinder perspective, this also provides an additional advantage.  These SDS implementations allow for a single driver implementation in Cinder to send requests to the SDS Controller as if it were a single backend device just like we do with a standard driver currently.  The difference however is that the SDS Controller then takes that command and routes it through it’s own scheduler and abstraction layer to any number of backend devices that are configured in it’s pool of back-end resources.  This means that a Vendor can implement multiple backend devices but only needs to submit and maintain a single Driver in OpenStack.</p>
+<p>&nbsp;</p>
+<p>I have mixed views on this, I certainly appreciate and understand a desire to pool resources and abstract the to higher level, but given that this is the whole purpose of Cinder it seems odd to me.  It’s a somewhat strange and in my opinion less than optimal design, mainly because the only apparent benefit is for the Vendor that is selling the SDS Controller, or possibly for the Vendor whose product is supported by the SDS Controller.  The latter advantage is troubling, because I view it as nothing more than a short-cut.  It’s a fact that contributing a driver to Cinder requires significant effort.  That effort encompasses not only the development of the driver itself (frankly that’s the easy part), but more more importantly it requires significant effort in terms of support, testing and most of all community participation.  The required effort is actually by design, I believe that requiring this effort helps deliver a better end product, and acts as a sort of filter between providers of products that actually want to enhance and advance OpenStack/Cinder as opposed to just use it as a sales tool.</p>
+<p>&nbsp;</p>
+<p>There are multiple Storage Vendors proposing this model and design to the Cinder project this week.  My initial reaction has been to “-2” such proposals and to “reject” proposed BluePrints submitted to LaunchPad.  There seems to be a good deal of debate on this topic however.  Some (particularly those that are proposing this model) obviously feel strongly that this is a great solution.  Others feel as though this is fine as long as they implement CI testing for every back-end they claim support for.  I don’t agree with either of these viewpoints.  I believe what makes the combination of Open Source and Vendor/Proprietary Software work, is when there’s a balance.  I define that balance as giving back at least an equal amount of improvement to the project as the benefit that you’re extracting from it.  Implementing your own abstraction is very much at odds with this philosophy.</p>
+<p>&nbsp;</p>
+<p>Cinder and OpenStack are Open Source SOFTWARE projects.  I believe the key to the balance and relationship between community and Vendors in the Cinder project is in fact because there’s been a clear line between the Software and the Hardware (Storage Backend).  By having this clear separation we’ve fostered a unique and effective balance, Vendors can contribute open software to support their hardware products, which in turns also drives them to improve the overall project.  This model has worked extremely well over the last couple of years.  I’m very concerned that if you break this model and begin to merge not only proprietary hardware but also proprietary software in to the project, it causes significant damage to the Cinder project.  The result is that vendors can easily focus on their product, and ignore the core Cinder project by basicly just ignoring it.  There’s no longer any real incentive for them to contribute, and even worse, the consumer loses the freedom of choice and we create a tiered version of the Cinder software; a higher tier for those that pay for a vendors software, and a lower tier for those that utilize the Open Source version.<br />
+As PTL I’ll continue to vote that we don’t go down this path, and keep the current model we have in Cinder.  The beauty of Open Source however is that everybody has a voice and a vote, if the overwhelming opinion is that this new direction is the way to go, then so beit.  I do however believe this will prove to be damaging to OpenStack and in particular to Cinder.</p>
+		
+</div>
+    
+
+		</div>		 
+	 </div>   
+	<footer class="footer">
+  <div class="container">
+	<p class="pull-right"> <a href="/blog/introducing-poole" title="Previous Post: Introducing Poole">&laquo; Previous Blog Post</a> 	  |  <a href="#">Back to top</a>  |   	<a href="/blog/the-problem-with-sds-under-cinder-part-2" title="Next Post: The Problem with SDS under Cinder - Part 2">Next Blog Post &raquo; </a> 	 </p>
+	<p>Page last generated on July 16, 2015</p>
+	<p>If need be, <a href="https://github.com/j-griffith/Feedback/issues/new" title="Leave feedback for John"  target="_blank" >leave me some feedback</a>.</p>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+  </div>
+</footer>
+
+    <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>    
+    
+	<script src="/js/custom.js" type="text/javascript"></script>	
+	
+	<script type="text/javascript">
+		/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+		var disqus_shortname = 'ericjones'; // required: replace example with your forum shortname
+
+		/* * * DON'T EDIT BELOW THIS LINE * * */
+		(function () {
+			var s = document.createElement('script'); s.async = true;
+			s.type = 'text/javascript';
+			s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+			(document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+		}());
+	</script>
+	
+	<!-- Google Analytics -->
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-29830549-1']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>	
+  </body>
+</html>

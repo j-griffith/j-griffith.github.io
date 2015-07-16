@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <title>John Griffith</title>
+ <link href="http://j-griffith.github.com/atom.xml" rel="self"/>
+ <link href="http://j-griffith.github.com/"/>
+ <updated>2015-07-16T13:56:08-06:00</updated>
+ <id>http://j-griffith.github.com</id>
+ <author>
+   <name>John Griffith</name>
+ </author>
+
+ 
+ <entry>
+   <title>OpenStack Live Migration With Cinder Backed Instances</title>
+   <link href="http://j-griffith.github.com/blog/openstack-live-migration-with-cinder-backed-instances"/>
+   <updated>2014-12-08T18:00:15-07:00</updated>
+   <id>http://j-griffith.github.com/blog/openstack-live-migration-with-cinder-backed-instances</id>
+   <content type="html">&lt;p&gt;Over the last several weeks I keep getting questions about Live Migration, does it work, how do you configure it, what are the requirements to use it and so on.  To be honest up until recently I hadn&#39;t actually dove into Live Migration so I tried it out (and failed), then started asking around and resorting to Google Searches.  The good thing is, there&#39;s TONS of information out there, problem is, there&#39;s TONS of information out there.  The bad thing here is the info isn&#39;t all that consistent.  Like many things there&#39;s always more than one way to achieve an end result, Live Migration is really no different.  So I thought I&#39;d try and write up what worked for me and in my opinion was the simplest method to use.&lt;/p&gt;
+&lt;p&gt;First off, for those that aren&#39;t familiar; Live Migration of OpenStack Instances is the process of migrating an OpenStack Instance from one Compute Node to another with little or no downtime.  The docs page has a good description here: http://docs.openstack.org/admin-guide-cloud/content/section_configuring-compute-migrations.html&lt;/p&gt;
+&lt;p&gt;One of the big misconceptions about Live Migration is that if you&#39;re Instances aren&#39;t stored on a Shared FS or a Shared backend device like CEPH you can&#39;t do Live-Migration.  That&#39;s not true at all, in fact notice the doc has an entry specifically for Volume-Backed Instances.  So let&#39;s take a look at how to create a Volume-Backed Instance using Juno and migrate it from one Compute Host to another.&lt;/p&gt;
+&lt;p&gt;First, my config; I&#39;ve set up a multi-node deployment using devstack stable/juno.  I went ahead and configured Cinder to run multiple backends, in my case SolidFire and LVM because I wanted to test both and make sure everything worked properly.  For info on Cinder Multi-Backend checkout the wiki here: https://wiki.openstack.org/wiki/Cinder-multi-backend&lt;/p&gt;
+&lt;p&gt;I chose to specify ssh as my connection method for live-migration.  There are of course other ways to do this by configuring libvirt and qemu, which you can check out here: https://libvirt.org/uri.html but rather than do any of that I just wanted to put a simple entry in my nova.conf file and use ssh.  Here&#39;s the libvirt section of my nova.conf:&lt;/p&gt;
+&lt;p&gt;[code language=&quot;text&quot;]&lt;/p&gt;
+&lt;p&gt;[libvirt]&lt;br /&gt;
+inject_partition = -2&lt;br /&gt;
+use_usb_tablet = False&lt;br /&gt;
+cpu_mode = none&lt;br /&gt;
+virt_type = kvm&lt;br /&gt;
+live_migration_uri = qemu+ssh://root@%s/system&lt;/p&gt;
+&lt;p&gt;[/code]&lt;/p&gt;
+&lt;p&gt;Notice I&#39;m using root here in my connection.  I&#39;ve used &quot;regular&quot; accounts with sudo permissions before to do remote connections to libvirt, but there&#39;s something about the process from Nova that the Key Verification will fail for any user other than &#39;root&#39;.  If anybody knows how to fix this up let me know, It&#39;d be great to learn what I&#39;m missing here.  For those that are interested in more detail, my nova.conf other than the entry here is just the defaults from devstack.  Here&#39;s a link to my nova.conf on the controller/compute: &lt;a title=&quot;/etc/nova/nova.conf&quot; href=&quot;http://goo.gl/Z9br22&quot; target=&quot;_blank&quot;&gt;/etc/nova/nova.conf&lt;/a&gt;.  I&#39;ve also added a link to my devstack local.conf; in this setup I actually started with a SolidFire deployment and manually updated cinder.conf to do multi-backend with LVM and added the default volume-type: &lt;a title=&quot;devstack/local.conf&quot; href=&quot;http://goo.gl/MkVl1y&quot; target=&quot;_blank&quot;&gt;devstack local.conf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;So since we&#39;re using ssh and root, you&#39;ve probably guessed we&#39;re going to need to setup ssh keys between our compute nodes.  I went ahead and setup root keys on each of the compute nodes, and installed each machines key on all of the nodes just doing a simple ssh-copy-id.  You may want to get a bit more sophisticated, distribute a key and modify /root/.ssh/config to include entries for each of the compute nodes.  Something like this should do the trick:&lt;/p&gt;
+&lt;p&gt;[code language=&quot;text&quot;]&lt;/p&gt;
+&lt;p&gt;Host fluffy-compute&lt;br /&gt;
+HostName fluffy-compute&lt;br /&gt;
+User root&lt;br /&gt;
+IdentityFile ~/.ssh/live-migrationkey.pem&lt;/p&gt;
+&lt;p&gt;[/code]&lt;/p&gt;
+&lt;p&gt;Verify you can ssh as root to-&amp;gt;from each of the Compute nodes, restart Nova Compute services and you *should* be ready to go.  Notice there I said *should*, what i found out was things didn&#39;t work.  I&#39;d get an error message stating that I couldn&#39;t do live migration because I wasn&#39;t using shared storage... huh?  What&#39;s up with that?&lt;/p&gt;
+&lt;p&gt;So it turns out there was a bug introduced during the Juno development cycle.  You can check out the bug on LaunchPad here: https://bugs.launchpad.net/nova/+bug/1392773&lt;/p&gt;
+&lt;p&gt;Fortunately there&#39;s a proposal up for master already that can be pulled down (and hopefully will merge soon), but I was running Juno, so I put together a quick backport to try out.  Note this path isn&#39;t quite complete, needs some method signature updates for the other hypervisors in OpenStack and of course Unit Tests.  Anyway, you can check out what I started via this gist: &lt;a href=&quot;https://gist.github.com/j-griffith/5e9be4e6548a03697dc5&quot; target=&quot;_blank&quot;&gt;https://gist.github.com/j-griffith/5e9be4e6548a03697dc5&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I went ahead an applied the Juno patch from the gist above, restarted all of my Nova services and tried again.  Here&#39;s how things go:&lt;/p&gt;
+&lt;p&gt;First, grab the image-id you want to use and create a Cinder Volume with it...&lt;/p&gt;
+&lt;p&gt;[code language=&quot;text&quot;]&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ nova image-list&lt;br /&gt;
++--------------------------------------+---------------------------------+--------+--------+&lt;br /&gt;
+| ID | Name | Status | Server |&lt;br /&gt;
++--------------------------------------+---------------------------------+--------+--------+&lt;br /&gt;
+| 40520350-25c7-4786-9586-5430d52d7663 | RedHat 6.5 Server | ACTIVE | |&lt;br /&gt;
+| 8a69ae88-a729-4d68-a7e6-25048b1cf885 | RedHat 7.0 Server | ACTIVE | |&lt;br /&gt;
+| afaa2feb-3a58-4e72-bebd-38f66bd0b611 | Ubuntu 14.04 Server | ACTIVE | |&lt;br /&gt;
+| 28b77f27-a922-4627-8b1d-f0df627be907 | cirros-0.3.2-x86_64-uec | ACTIVE | |&lt;br /&gt;
+| 63c173cd-3f5a-49ff-89ab-8c90a1701808 | cirros-0.3.2-x86_64-uec-kernel | ACTIVE | |&lt;br /&gt;
+| e3aa2ab0-383c-4f75-bdc0-dbee86645ad5 | cirros-0.3.2-x86_64-uec-ramdisk | ACTIVE | |&lt;br /&gt;
++--------------------------------------+---------------------------------+--------+--------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ cinder create --image-id afaa2feb-3a58-4e72-bebd-38f66bd0b611 --display-name trusty-volume 10&lt;br /&gt;
++---------------------------------------+--------------------------------------+&lt;br /&gt;
+| Property | Value |&lt;br /&gt;
++---------------------------------------+--------------------------------------+&lt;br /&gt;
+| attachments | [] |&lt;br /&gt;
+| availability_zone | nova |&lt;br /&gt;
+| bootable | false |&lt;br /&gt;
+| consistencygroup_id | None |&lt;br /&gt;
+| created_at | 2014-12-08T17:34:50.000000 |&lt;br /&gt;
+| description | None |&lt;br /&gt;
+| encrypted | False |&lt;br /&gt;
+| id | 6419112b-bf40-4994-809f-12dce25f5f1f |&lt;br /&gt;
+| metadata | {} |&lt;br /&gt;
+| name | trusty-volume |&lt;br /&gt;
+| os-vol-host-attr:host | None |&lt;br /&gt;
+| os-vol-mig-status-attr:migstat | None |&lt;br /&gt;
+| os-vol-mig-status-attr:name_id | None |&lt;br /&gt;
+| os-vol-tenant-attr:tenant_id | 56dc791650074cc9a2858bd5053a7116 |&lt;br /&gt;
+| os-volume-replication:driver_data | None |&lt;br /&gt;
+| os-volume-replication:extended_status | None |&lt;br /&gt;
+| replication_status | disabled |&lt;br /&gt;
+| size | 10 |&lt;br /&gt;
+| snapshot_id | None |&lt;br /&gt;
+| source_volid | None |&lt;br /&gt;
+| status | creating |&lt;br /&gt;
+| user_id | 3dcc1572d7594a4eb6b043b819e415de |&lt;br /&gt;
+| volume_type | solidfire |&lt;br /&gt;
++---------------------------------------+--------------------------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$cinder list&lt;br /&gt;
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+&lt;br /&gt;
+| ID | Status | Name | Size | Volume Type | Bootable | Attached to |&lt;br /&gt;
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+&lt;br /&gt;
+| 6419112b-bf40-4994-809f-12dce25f5f1f | available | trusty-volume | 10 | solidfire | true | |&lt;br /&gt;
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ nova boot --flavor 2 --block-device-mapping vda=6419112b-bf40-4994-809f-12dce25f5f1f --key-name fluffycloud trusty-migrate&lt;br /&gt;
++--------------------------------------+--------------------------------------------------+&lt;br /&gt;
+| Property | Value |&lt;br /&gt;
++--------------------------------------+--------------------------------------------------+&lt;br /&gt;
+| OS-DCF:diskConfig | MANUAL |&lt;br /&gt;
+| OS-EXT-AZ:availability_zone | nova |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:host | - |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:hypervisor_hostname | - |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:instance_name | instance-00000002 |&lt;br /&gt;
+| OS-EXT-STS:power_state | 0 |&lt;br /&gt;
+| OS-EXT-STS:task_state | scheduling |&lt;br /&gt;
+| OS-EXT-STS:vm_state | building |&lt;br /&gt;
+| OS-SRV-USG:launched_at | - |&lt;br /&gt;
+| OS-SRV-USG:terminated_at | - |&lt;br /&gt;
+| accessIPv4 | |&lt;br /&gt;
+| accessIPv6 | |&lt;br /&gt;
+| adminPass | rKL9sfs2vPs4 |&lt;br /&gt;
+| config_drive | |&lt;br /&gt;
+| created | 2014-12-08T17:41:39Z |&lt;br /&gt;
+| flavor | m1.small (2) |&lt;br /&gt;
+| hostId | |&lt;br /&gt;
+| id | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |&lt;br /&gt;
+| image | Attempt to boot from volume - no image supplied |&lt;br /&gt;
+| key_name | fluffycloud |&lt;br /&gt;
+| metadata | {} |&lt;br /&gt;
+| name | trusty-migrate |&lt;br /&gt;
+| os-extended-volumes:volumes_attached | [{&amp;amp;quot;id&amp;amp;quot;: &amp;amp;quot;6419112b-bf40-4994-809f-12dce25f5f1f&amp;amp;quot;}] |&lt;br /&gt;
+| progress | 0 |&lt;br /&gt;
+| security_groups | default |&lt;br /&gt;
+| status | BUILD |&lt;br /&gt;
+| tenant_id | 56dc791650074cc9a2858bd5053a7116 |&lt;br /&gt;
+| updated | 2014-12-08T17:41:39Z |&lt;br /&gt;
+| user_id | 3dcc1572d7594a4eb6b043b819e415de |&lt;br /&gt;
++--------------------------------------+--------------------------------------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ nova list&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;br /&gt;
+| ID | Name | Status | Task State | Power State | Networks |&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;br /&gt;
+| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | - | Running | private=10.1.0.2 |&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;br /&gt;
+| Property | Value |&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;br /&gt;
+| OS-DCF:diskConfig | MANUAL |&lt;br /&gt;
+| OS-EXT-AZ:availability_zone | nova |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:host | fluffy-compute |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:hypervisor_hostname | fluffy-compute |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:instance_name | instance-00000002 |&lt;br /&gt;
+| OS-EXT-STS:power_state | 1 |&lt;br /&gt;
+| OS-EXT-STS:task_state | - |&lt;br /&gt;
+| OS-EXT-STS:vm_state | active |&lt;br /&gt;
+| OS-SRV-USG:launched_at | 2014-12-08T17:41:47.000000 |&lt;br /&gt;
+| OS-SRV-USG:terminated_at | - |&lt;br /&gt;
+| accessIPv4 | |&lt;br /&gt;
+| accessIPv6 | |&lt;br /&gt;
+| config_drive | |&lt;br /&gt;
+| created | 2014-12-08T17:41:39Z |&lt;br /&gt;
+| flavor | m1.small (2) |&lt;br /&gt;
+| hostId | 48adbabbab9babab4c8948d3478e9d2fae8ffb407bab1ca21a843981 |&lt;br /&gt;
+| id | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |&lt;br /&gt;
+| image | Attempt to boot from volume - no image supplied |&lt;br /&gt;
+| key_name | fluffycloud |&lt;br /&gt;
+| metadata | {} |&lt;br /&gt;
+| name | trusty-migrate |&lt;br /&gt;
+| os-extended-volumes:volumes_attached | [{&amp;amp;quot;id&amp;amp;quot;: &amp;amp;quot;6419112b-bf40-4994-809f-12dce25f5f1f&amp;amp;quot;}] |&lt;br /&gt;
+| private network | 10.1.0.2 |&lt;br /&gt;
+| progress | 0 |&lt;br /&gt;
+| security_groups | default |&lt;br /&gt;
+| status | ACTIVE |&lt;br /&gt;
+| tenant_id | 56dc791650074cc9a2858bd5053a7116 |&lt;br /&gt;
+| updated | 2014-12-08T17:41:47Z |&lt;br /&gt;
+| user_id | 3dcc1572d7594a4eb6b043b819e415de |&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ubuntu@fluffy-master:~$ nova live-migration 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904&lt;br /&gt;
+ubuntu@fluffy-master:~$ nova list&lt;br /&gt;
++--------------------------------------+----------------+-----------+------------+-------------+------------------+&lt;br /&gt;
+| ID | Name | Status | Task State | Power State | Networks |&lt;br /&gt;
++--------------------------------------+----------------+-----------+------------+-------------+------------------+&lt;br /&gt;
+| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | MIGRATING | migrating | Running | private=10.1.0.2 |&lt;br /&gt;
++--------------------------------------+----------------+-----------+------------+-------------+------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$nova list&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;br /&gt;
+| ID | Name | Status | Task State | Power State | Networks |&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;br /&gt;
+| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | - | Running | private=10.1.0.2 |&lt;br /&gt;
++--------------------------------------+----------------+--------+------------+-------------+------------------+&lt;/p&gt;
+&lt;p&gt;ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;br /&gt;
+| Property | Value |&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;br /&gt;
+| OS-DCF:diskConfig | MANUAL |&lt;br /&gt;
+| OS-EXT-AZ:availability_zone | nova |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:host | fluffy-master |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:hypervisor_hostname | fluffy-master |&lt;br /&gt;
+| OS-EXT-SRV-ATTR:instance_name | instance-00000002 |&lt;br /&gt;
+| OS-EXT-STS:power_state | 1 |&lt;br /&gt;
+| OS-EXT-STS:task_state | - |&lt;br /&gt;
+| OS-EXT-STS:vm_state | active |&lt;br /&gt;
+| OS-SRV-USG:launched_at | 2014-12-08T17:41:47.000000 |&lt;br /&gt;
+| OS-SRV-USG:terminated_at | - |&lt;br /&gt;
+| accessIPv4 | |&lt;br /&gt;
+| accessIPv6 | |&lt;br /&gt;
+| config_drive | |&lt;br /&gt;
+| created | 2014-12-08T17:41:39Z |&lt;br /&gt;
+| flavor | m1.small (2) |&lt;br /&gt;
+| hostId | 97a1a99eaf8e1fab2ea7cb0be641ff55f2da5df4e68d0ecb62293e00 |&lt;br /&gt;
+| id | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |&lt;br /&gt;
+| image | Attempt to boot from volume - no image supplied |&lt;br /&gt;
+| key_name | fluffycloud |&lt;br /&gt;
+| metadata | {} |&lt;br /&gt;
+| name | trusty-migrate |&lt;br /&gt;
+| os-extended-volumes:volumes_attached | [{&amp;amp;quot;id&amp;amp;quot;: &amp;amp;quot;6419112b-bf40-4994-809f-12dce25f5f1f&amp;amp;quot;}] |&lt;br /&gt;
+| private network | 10.1.0.2 |&lt;br /&gt;
+| progress | 0 |&lt;br /&gt;
+| security_groups | default |&lt;br /&gt;
+| status | ACTIVE |&lt;br /&gt;
+| tenant_id | 56dc791650074cc9a2858bd5053a7116 |&lt;br /&gt;
+| updated | 2014-12-08T17:41:47Z |&lt;br /&gt;
+| user_id | 3dcc1572d7594a4eb6b043b819e415de |&lt;br /&gt;
++--------------------------------------+----------------------------------------------------------+&lt;br /&gt;
+[/code]&lt;/p&gt;
+&lt;p&gt;Pretty cool eh?  As always feedback is more than welcome.  Also, if you have specific OpenStack / Cinder related topics you might want to see more about, drop me a line or post a comment.&lt;/p&gt;
+&lt;p&gt;Thanks!!!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Remember the whole point</title>
+   <link href="http://j-griffith.github.com/blog/remember-the-whole-point"/>
+   <updated>2014-07-01T22:28:41-06:00</updated>
+   <id>http://j-griffith.github.com/blog/remember-the-whole-point</id>
+   <content type="html">&lt;p&gt;I&#39;ve been involved with OpenStack for a few years now and I&#39;ve seen some pretty incredible changes.  OpenStack is now something that I think almost any medium to large sized company with a Data Center has some level of interest in.  The growth, adoption and increased participation in the project has been nothing short of amazing.&lt;/p&gt;
+&lt;p&gt;With that growth there’s an increasing number of IT Vendors and Software Companies that are contributing code.  I’ve given multiple talks at Conferences and other events stating that I feel this is a win for Open Source and more specifically a win for OpenStack.  Having multiple competing vendors sharing ideas and contributing to make the overall project better is extremely powerful and in my opinion good.  I don&#39;t want to go into one my rants about balance of contributions (i.e. contribution to the overall OpenStack project versus the piece that just allows you to market and sell product), so I won&#39;t… I&#39;ll save that for another day.  I&#39;ve been around a while, and I&#39;m a realist, I&#39;ll be the first to say that if the opportunity to market and prophet from OpenStack wasn&#39;t there it wouldn&#39;t have grown nearly as much as it has over the years.&lt;/p&gt;
+&lt;p&gt;I do want to try and remind people though that OpenStack and Open Source aren’t just about marketing and driving sales of some product.  There are various segments out there like Research Institutions, Universities and nonprofits that don&#39;t have massive budgets and they rely on Open Source in order to solve real problems.  Cloud computing is no exception, there are tons of organizations out there that are trying to solve problems ranging from finding cures for disease, to understanding and predicting weather phenomena.  Whether it’s genetic sequencing, climate analysis or modeling viruses in order to help find a cure; there are numerous applications where platforms like OpenStack can and do make a difference.  I like to think that while I contribute to OpenStack as a career and to benefit my employer, that I’m also at the same time able to contribute something that makes a difference.  Who knows, maybe some day some group will be using OpenStack that they pulled down from Github on their cheap commodity hardware and find a way to predict earthquakes, or unlock the genetic mysteries of some fatal disease and find a way to cure it, or even better prevent it.&lt;/p&gt;
+&lt;p&gt;The point is that all of this is about more than selling an OpenStack distribution, or enabling the sale of more of “Vendor-A’s” kit.  We have an opportunity to contribute to and build something that actually matters and makes a difference.  We can innovate and provide something truly advanced that doesn&#39;t include a giant price tag to go along with it.  I’d ask that everybody involved in OpenStack just take a step back every once in a while… think about some of those segments of the community that aren&#39;t necessarily associated with dollars.  How can we help them?  How can we provide something that enables them to make a difference, and in turn make a difference ourselves?&lt;/p&gt;
+&lt;p&gt;That’s really what Open Source is all about to me, that’s why I love it.  A while back at the Folsom Summit when we first started talking about doing Cinder, Vish made a statement that I think was really important.  I don&#39;t remember the exact words, but it was something like “Let’s make sure we don’t forget our friends and users in the research community”.  I think that’s a great point and we’d all do well to remind ourselves of that once in a while.  It’s not just about selling product and making money, it’s about enabling others to do things they couldn’t do before by Open Sourcing the software and tools.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>The SDS or Abstraction driver in Cinder debate... I give up</title>
+   <link href="http://j-griffith.github.com/blog/the-sds-or-abstraction-driver-in-cinder-debate-i-give-up"/>
+   <updated>2014-07-01T20:33:09-06:00</updated>
+   <id>http://j-griffith.github.com/blog/the-sds-or-abstraction-driver-in-cinder-debate-i-give-up</id>
+   <content type="html">&lt;p&gt;So first, I&#39;d like to thank all of the folks who have provided quite a bit of feedback on this topic both those from EMC that support the idea, and all the rest of you who for the most part don&#39;t (interesting categorization of opinions I think).&lt;/p&gt;
+&lt;p&gt;The latest from Vendors like Huawei and EMC is an easy trick to skirt around my viewpoint on this.  The solution they&#39;ve figured out is that if they have a device (or software package) that runs on commodity hardware that only works via VIPR (or whatever their abstraction layer is called), how could I possibly argue against it being submitted.  Well... I could, but quite frankly I&#39;m tired of this topic and I have realized beyond a shadow of a doubt that the motivation for involvement in OpenStack is much much different for a lot of folks than what I may have hoped, or even than what I view my own motivation for involvement as being.&lt;/p&gt;
+&lt;p&gt;In the next few days I have some thoughts I&#39;d like to get out there regarding Open Source, OpenStack, and my interpretation of what all of it means.  Stay tuned and if you&#39;re remotely interested in my ramblings and silly opinions hopefully you&#39;ll check it out and let me know what you think. &lt;/p&gt;
+&lt;p&gt;In the meantime, you all win... I have better things to do (like finishing my patch to improve Cinder&#39;s core data-path and control abstraction) than to continue arguing over something that in the end doesn&#39;t really even matter.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>The Problem with SDS under Cinder - Part 2</title>
+   <link href="http://j-griffith.github.com/blog/the-problem-with-sds-under-cinder-part-2"/>
+   <updated>2014-06-17T16:26:13-06:00</updated>
+   <id>http://j-griffith.github.com/blog/the-problem-with-sds-under-cinder-part-2</id>
+   <content type="html">&lt;p&gt;Ok... so there&#39;s been all sorts of comments and follow up blogs from my initial posting.  The most recent of which came from my good friend Kenneth Hui &lt;strong&gt;&lt;a title=&quot;The problem SDS under OpenStack/Cinder solves&quot; href=&quot;http://cloudarchitectmusings.com/2014/06/17/the-problem-sds-under-openstack-cinder-solves/&quot; target=&quot;_blank&quot;&gt;The problem sds under openstack cinder solves&lt;/a&gt;.  &lt;/strong&gt;I&#39;m likely to say some &quot;unpopular&quot; things in this post and I really hope that Ken and the folks at EMC don&#39;t take it the wrong way.  They&#39;re a great group, I really enjoy debating with them, and even more, I enjoy talking about OpenStack and common interests that we have.  I also really value Kens viewpoint and friendship, he&#39;s a great guy and have the utmost respect for him both personally and technically.&lt;/p&gt;
+&lt;p&gt;Ken makes some pretty good points (as does the rest of the EMC team).  Here&#39;s the problem though, I don&#39;t see VIPR (or any of the sudden influx of these storage abstraction solutions calling themselves SDS) really doing anything that unique or different.  Ken makes a great point about true SDS being a separation of control and data planes and most importantly this functionality has requirements on the storage platform itself.  I couldn&#39;t agree more, and I don&#39;t see how VIPR is offering me anything different here than what we&#39;re already doing in Cinder; more importantly I don&#39;t see how it could.&lt;/p&gt;
+&lt;p&gt;Another issue I&#39;ve been having is mixed messages from EMC on what VIPR is and what it supports.  In Atlanta I was told I was incorrect and that VIPR was strictly for consolidation of EMC products, but again I see things like this: &lt;strong&gt;&lt;a href=&quot;https://community.emc.com/thread/194554&quot; target=&quot;_blank&quot;&gt;Which&lt;/a&gt;&lt;a href=&quot;https://community.emc.com/thread/194554&quot; target=&quot;_blank&quot;&gt; Storage Platforms are supported by VIPR SRM&lt;/a&gt;.  &lt;/strong&gt;Many of those devices are in fact devices that already have drivers in Cinder and provide the same abstraction that VIPR would provide.  Are you saying that VIPR has some magic that none of us know about that actually changes what can be done with the device?  Or that EMC and the VIPR team have discovered some hidden programmatic interface to NetAPP, IBM, HDS and HP devices that the engineers who are full time contributors to Cinder currently simply didn&#39;t know about?  I&#39;m failing to see what the value add is here for OpenStack (or anybody for that matter).  What is VIPR actually providing that Cinder doesn&#39;t or can&#39;t in terms of these Block devices?&lt;/p&gt;
+&lt;p&gt;Ken also mentions things in his post like &quot;exposing unique features&quot; but I don&#39;t understand how that is being done any differently with VIPR than it is in Cinder today?  My point here is that you&#39;re using the same API so how is it different?  Seems to me you&#39;d still use the same mechanism we use in Cinder today of Volume-Types or Capability scheduling.&lt;/p&gt;
+&lt;p&gt;Finally, one of the most common arguments I get from EMC on this topic is &quot;Neutron does it this way&quot;, well...  comparing block storage and Networking isn&#39;t very fair in my opinion.  Networking is vastly different and in my opinion more complex.  That being said, Neutron has some challenges as a result of this model in my opinion (and others as well).  I&#39;m not criticizing Neutron or the great folks that are working on it in any way at all; but I will say that it&#39;s probably not a good argument to use here (at least not with me).&lt;/p&gt;
+&lt;p&gt;So, where are we... with all of my ranting and gibberish nonsense that frankly probably nobody really cares about anyway; I&#39;ve come pretty close to just accepting the fact that the VIPR driver is likely going to be included in Cinder for the Juno release.  I&#39;m struggling with this because on the tail of it comes everybody elses duplicate abstraction (Atlantis, ProphetStor and a list of others that may not be &quot;public&quot; yet).  I&#39;m not sure how to handle this, I still would prefer that they aren&#39;t shipped in OpenStack but provided as an option for folks to use with OpenStack as outside products if they so desire.  Alternatively, I don&#39;t think they should be called drivers, I think they should probably be plugins that are designed higher up in the architecture (sit just below the API), so if you don&#39;t want to use Cinder for anything other than an API that&#39;s your choice, go for it.&lt;/p&gt;
+&lt;p&gt;At any rate, the only good thing is that they say imitation is the most sincere form of flattery; if that&#39;s the case all of the Cinder team (and the original nova-volume team) should be pretty flattered because it seems that there are a vast number of vendors out there that are imitating Cinder and trying to productize it.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>The problem with SDS under Cinder</title>
+   <link href="http://j-griffith.github.com/blog/the-problem-with-sds-under-cinder"/>
+   <updated>2014-05-16T13:47:29-06:00</updated>
+   <id>http://j-griffith.github.com/blog/the-problem-with-sds-under-cinder</id>
+   <content type="html">&lt;p&gt;It’s been a great Summit here in Atlanta, we’ve had one of the most exciting and energetic Summit’s that I’ve had the opportunity to participate in so far.  Now that we’ve cleared the Exhibit hall, the booths are gone and most of the marketing and sales folks are on a plane heading home, it’s time for the Developer Community to get to work.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;On the Cinder side we have quite a bit of work to do and I expect some great brainstorming in the Design Sessions on Thursday and Friday.  One topic in particular that is on the agenda is “What is a Cinder Driver”.  This session in my opinion is perhaps the most critical session we’ll have this week and the decisions that come out of it will have a significant impact on the future of Cinder.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;The reason for this session is to try and get some consensus around how to deal with the most recent trend that I’m seeing in the Cinder community.  The latest trend from a number of the larger storage vendors is to implement a Software Defined Storage “driver”.  The design here is to implement a generalized driver, that acts as an interface to an external Controller that implements an abstraction very similar to what Cinder is already intended to provide.  This model duplicates a significant amount of code that exists in Cinder.  The Controller handles scheduling, pooling and abstraction of whatever supported devices For those that aren’t familiar, there are a number of examples that can be found on the web, but in short if you’re familiar with Cinder, you’ll recognize it as almost a duplicate pretty quickly.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;From the perspective of a Vendor that builds this Software Package and implements the driver in Cinder this has a number of advantages.  The primary advantage is of course they have a Software Defined Storage implementation that they can sell to customers.  In addition, from an OpenStack/Cinder perspective, this also provides an additional advantage.  These SDS implementations allow for a single driver implementation in Cinder to send requests to the SDS Controller as if it were a single backend device just like we do with a standard driver currently.  The difference however is that the SDS Controller then takes that command and routes it through it’s own scheduler and abstraction layer to any number of backend devices that are configured in it’s pool of back-end resources.  This means that a Vendor can implement multiple backend devices but only needs to submit and maintain a single Driver in OpenStack.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;I have mixed views on this, I certainly appreciate and understand a desire to pool resources and abstract the to higher level, but given that this is the whole purpose of Cinder it seems odd to me.  It’s a somewhat strange and in my opinion less than optimal design, mainly because the only apparent benefit is for the Vendor that is selling the SDS Controller, or possibly for the Vendor whose product is supported by the SDS Controller.  The latter advantage is troubling, because I view it as nothing more than a short-cut.  It’s a fact that contributing a driver to Cinder requires significant effort.  That effort encompasses not only the development of the driver itself (frankly that’s the easy part), but more more importantly it requires significant effort in terms of support, testing and most of all community participation.  The required effort is actually by design, I believe that requiring this effort helps deliver a better end product, and acts as a sort of filter between providers of products that actually want to enhance and advance OpenStack/Cinder as opposed to just use it as a sales tool.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;There are multiple Storage Vendors proposing this model and design to the Cinder project this week.  My initial reaction has been to “-2” such proposals and to “reject” proposed BluePrints submitted to LaunchPad.  There seems to be a good deal of debate on this topic however.  Some (particularly those that are proposing this model) obviously feel strongly that this is a great solution.  Others feel as though this is fine as long as they implement CI testing for every back-end they claim support for.  I don’t agree with either of these viewpoints.  I believe what makes the combination of Open Source and Vendor/Proprietary Software work, is when there’s a balance.  I define that balance as giving back at least an equal amount of improvement to the project as the benefit that you’re extracting from it.  Implementing your own abstraction is very much at odds with this philosophy.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;Cinder and OpenStack are Open Source SOFTWARE projects.  I believe the key to the balance and relationship between community and Vendors in the Cinder project is in fact because there’s been a clear line between the Software and the Hardware (Storage Backend).  By having this clear separation we’ve fostered a unique and effective balance, Vendors can contribute open software to support their hardware products, which in turns also drives them to improve the overall project.  This model has worked extremely well over the last couple of years.  I’m very concerned that if you break this model and begin to merge not only proprietary hardware but also proprietary software in to the project, it causes significant damage to the Cinder project.  The result is that vendors can easily focus on their product, and ignore the core Cinder project by basicly just ignoring it.  There’s no longer any real incentive for them to contribute, and even worse, the consumer loses the freedom of choice and we create a tiered version of the Cinder software; a higher tier for those that pay for a vendors software, and a lower tier for those that utilize the Open Source version.&lt;br /&gt;
+As PTL I’ll continue to vote that we don’t go down this path, and keep the current model we have in Cinder.  The beauty of Open Source however is that everybody has a voice and a vote, if the overwhelming opinion is that this new direction is the way to go, then so beit.  I do however believe this will prove to be damaging to OpenStack and in particular to Cinder.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Introducing Poole</title>
+   <link href="http://j-griffith.github.com/blog/introducing-poole"/>
+   <updated>2014-01-02T00:00:00-07:00</updated>
+   <id>http://j-griffith.github.com/blog/introducing-poole</id>
+   <content type="html">&lt;p&gt;&lt;em&gt;The Strange Case of Dr. Jekyll and Mr. Hyde&lt;/em&gt; tells the story of a lawyer investigating the connection of two persons, Dr. Henry Jekyll and Mr. Edward Hyde. Chief among the novel&#39;s supporting cast is a man by the name of Mr. Poole, Dr. Jekyll&#39;s loyal butler.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Poole is the butler for &lt;a href=&quot;http://jekyllrb.com&quot;&gt;Jekyll&lt;/a&gt;, the static site generator. It&#39;s designed and developed by &lt;a href=&quot;https://twitter.com/mdo&quot;&gt;@mdo&lt;/a&gt; to provide a clear and concise foundational setup for any Jekyll site. It does so by furnishing a full vanilla Jekyll install with example templates, pages, posts, and styles.&lt;/p&gt;
+
+&lt;p&gt;There are currently two themes built on Poole:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hyde.getpoole.com&quot;&gt;Hyde&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://lanyon.getpoole.com&quot;&gt;Lanyon&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Learn more and contribute on &lt;a href=&quot;https://github.com/poole&quot;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3&gt;What&#39;s included&lt;/h3&gt;
+
+&lt;p&gt;Poole is a streamlined Jekyll site designed and built as a foundation for building more meaningful themes. Poole, and every theme built on it, includes the following:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Complete Jekyll setup included (layouts, config, &lt;a href=&quot;/404.html&quot;&gt;404&lt;/a&gt;, &lt;a href=&quot;/atom.xml&quot;&gt;RSS feed&lt;/a&gt;, posts, and &lt;a href=&quot;/about&quot;&gt;example page&lt;/a&gt;)&lt;/li&gt;
+&lt;li&gt;Mobile friendly design and development&lt;/li&gt;
+&lt;li&gt;Easily scalable text and component sizing with &lt;code&gt;rem&lt;/code&gt; units in the CSS&lt;/li&gt;
+&lt;li&gt;Support for a wide gamut of HTML elements&lt;/li&gt;
+&lt;li&gt;Related posts (time-based, because Jekyll) below each post&lt;/li&gt;
+&lt;li&gt;Syntax highlighting, courtesy Pygments (the Python-based code snippet highlighter)&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Additional features are available in individual themes.&lt;/p&gt;
+
+&lt;h3&gt;Browser support&lt;/h3&gt;
+
+&lt;p&gt;Poole and its themes are by preference a forward-thinking project. In addition to the latest versions of Chrome, Safari (mobile and desktop), and Firefox, it is only compatible with Internet Explorer 9 and above.&lt;/p&gt;
+
+&lt;h3&gt;Download&lt;/h3&gt;
+
+&lt;p&gt;Poole is developed on and hosted with GitHub. Head to the &lt;a href=&quot;https://github.com/poole/poole&quot;&gt;GitHub repository&lt;/a&gt; for downloads, bug reports, and features requests.&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Example content</title>
+   <link href="http://j-griffith.github.com/blog/example-content"/>
+   <updated>2014-01-01T00:00:00-07:00</updated>
+   <id>http://j-griffith.github.com/blog/example-content</id>
+   <content type="html">&lt;div class=&quot;message&quot;&gt;
+  Howdy! This is an example blog post that shows several types of HTML content supported in this theme.
+&lt;/div&gt;
+
+
+&lt;p&gt;Cum sociis natoque penatibus et magnis &lt;a href=&quot;#&quot;&gt;dis parturient montes&lt;/a&gt;, nascetur ridiculus mus. &lt;em&gt;Aenean eu leo quam.&lt;/em&gt; Pellentesque ornare sem lacinia quam venenatis vestibulum. Sed posuere consectetur est at lobortis. Cras mattis consectetur purus sit amet fermentum.&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;p&gt;Curabitur blandit tempus porttitor. Nullam quis risus eget urna mollis ornare vel eu leo. Nullam id dolor id nibh ultricies vehicula ut id elit.&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;Etiam porta &lt;strong&gt;sem malesuada magna&lt;/strong&gt; mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.&lt;/p&gt;
+
+&lt;h2&gt;Inline HTML elements&lt;/h2&gt;
+
+&lt;p&gt;HTML defines a long list of available inline tags, a complete list of which can be found on the &lt;a href=&quot;https://developer.mozilla.org/en-US/docs/Web/HTML/Element&quot;&gt;Mozilla Developer Network&lt;/a&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;To bold text&lt;/strong&gt;, use &lt;code&gt;&amp;lt;strong&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;To italicize text&lt;/em&gt;, use &lt;code&gt;&amp;lt;em&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Abbreviations, like &lt;abbr title=&quot;HyperText Markup Langage&quot;&gt;HTML&lt;/abbr&gt; should use &lt;code&gt;&amp;lt;abbr&amp;gt;&lt;/code&gt;, with an optional &lt;code&gt;title&lt;/code&gt; attribute for the full phrase.&lt;/li&gt;
+&lt;li&gt;Citations, like &lt;cite&gt;&amp;mdash; Mark otto&lt;/cite&gt;, should use &lt;code&gt;&amp;lt;cite&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;Deleted&lt;/del&gt; text should use &lt;code&gt;&amp;lt;del&amp;gt;&lt;/code&gt; and &lt;ins&gt;inserted&lt;/ins&gt; text should use &lt;code&gt;&amp;lt;ins&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Superscript &lt;sup&gt;text&lt;/sup&gt; uses &lt;code&gt;&amp;lt;sup&amp;gt;&lt;/code&gt; and subscript &lt;sub&gt;text&lt;/sub&gt; uses &lt;code&gt;&amp;lt;sub&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Most of these elements are styled by browsers with few modifications on our part.&lt;/p&gt;
+
+&lt;h2&gt;Footnotes&lt;/h2&gt;
+
+&lt;p&gt;Footnotes are supported as part of the Markdown syntax. Here&#39;s one in action. Clicking this number&lt;a href=&quot;Handy!&quot;&gt;^fn-sample_footnote&lt;/a&gt; will lead you to a footnote. The syntax looks like:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Clicking this number[^fn-sample_footnote]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Each footnote needs the &lt;code&gt;^fn-&lt;/code&gt; prefix and a unique ID to be referenced for the footnoted content. The syntax for that list looks something like this:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[^fn-sample_footnote]: Handy! Now click the return link to go back.&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You can place the footnoted content wherever you like. Markdown parsers should properly place it at the bottom of the post.&lt;/p&gt;
+
+&lt;h2&gt;Heading&lt;/h2&gt;
+
+&lt;p&gt;Vivamus sagittis lacus vel augue rutrum faucibus dolor auctor. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.&lt;/p&gt;
+
+&lt;h3&gt;Code&lt;/h3&gt;
+
+&lt;p&gt;Inline code is available with the &lt;code&gt;&amp;lt;code&amp;gt;&lt;/code&gt; element. Snippets of multiple lines of code are supported through Pygments. Longer lines will automatically scroll horizontally when needed.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// Example can be run directly in your JavaScript console&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Create a function that takes two arguments and returns the sum of those arguments&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;a&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;b&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;return a + b&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Call the function&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// &amp;gt; 8&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You may also optionally show code snippets with line numbers. Add &lt;code&gt;linenos&lt;/code&gt; to the Pygments tags.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span class=&quot;lineno&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Example can be run directly in your JavaScript console&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;2&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Create a function that takes two arguments and returns the sum of those arguments&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;a&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;b&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;return a + b&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;5&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;6&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Call the function&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;adder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;8&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// &amp;gt; 8&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa.&lt;/p&gt;
+
+&lt;h3&gt;Gists via GitHub Pages&lt;/h3&gt;
+
+&lt;p&gt;Vestibulum id ligula porta felis euismod semper. Nullam quis risus eget urna mollis ornare vel eu leo. Donec sed odio dui.&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/13f94b734a4ddb132735.js?file=gist.md&quot;&gt; &lt;/script&gt;
+
+
+&lt;p&gt;Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum. Nullam quis risus eget urna mollis ornare vel eu leo. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sed odio dui. Vestibulum id ligula porta felis euismod semper.&lt;/p&gt;
+
+&lt;h3&gt;Lists&lt;/h3&gt;
+
+&lt;p&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Praesent commodo cursus magna, vel scelerisque nisl consectetur et.&lt;/li&gt;
+&lt;li&gt;Donec id elit non mi porta gravida at eget metus.&lt;/li&gt;
+&lt;li&gt;Nulla vitae elit libero, a pharetra augue.&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Donec ullamcorper nulla non metus auctor fringilla. Nulla vitae elit libero, a pharetra augue.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Vestibulum id ligula porta felis euismod semper.&lt;/li&gt;
+&lt;li&gt;Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.&lt;/li&gt;
+&lt;li&gt;Maecenas sed diam eget risus varius blandit sit amet non magna.&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;p&gt;Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;HyperText Markup Language (HTML)&lt;/dt&gt;
+  &lt;dd&gt;The language used to describe and define the content of a Web page&lt;/dd&gt;
+
+  &lt;dt&gt;Cascading Style Sheets (CSS)&lt;/dt&gt;
+  &lt;dd&gt;Used to describe the appearance of Web content&lt;/dd&gt;
+
+  &lt;dt&gt;JavaScript (JS)&lt;/dt&gt;
+  &lt;dd&gt;The programming language used to build advanced Web sites and applications&lt;/dd&gt;
+&lt;/dl&gt;
+
+
+&lt;p&gt;Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
+
+&lt;h3&gt;Images&lt;/h3&gt;
+
+&lt;p&gt;Quisque consequat sapien eget quam rhoncus, sit amet laoreet diam tempus. Aliquam aliquam metus erat, a pulvinar turpis suscipit at.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://placehold.it/800x400&quot; title=&quot;Large example image&quot; alt=&quot;placeholder&quot; /&gt;
+&lt;img src=&quot;http://placehold.it/400x200&quot; title=&quot;Medium example image&quot; alt=&quot;placeholder&quot; /&gt;
+&lt;img src=&quot;http://placehold.it/200x200&quot; title=&quot;Small example image&quot; alt=&quot;placeholder&quot; /&gt;&lt;/p&gt;
+
+&lt;h3&gt;Tables&lt;/h3&gt;
+
+&lt;p&gt;Aenean lacinia bibendum nulla sed consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Name&lt;/th&gt;
+      &lt;th&gt;Upvotes&lt;/th&gt;
+      &lt;th&gt;Downvotes&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tfoot&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Totals&lt;/td&gt;
+      &lt;td&gt;21&lt;/td&gt;
+      &lt;td&gt;23&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tfoot&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Alice&lt;/td&gt;
+      &lt;td&gt;10&lt;/td&gt;
+      &lt;td&gt;11&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Bob&lt;/td&gt;
+      &lt;td&gt;4&lt;/td&gt;
+      &lt;td&gt;3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Charlie&lt;/td&gt;
+      &lt;td&gt;7&lt;/td&gt;
+      &lt;td&gt;9&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+
+&lt;p&gt;Nullam id dolor id nibh ultricies vehicula ut id elit. Sed posuere consectetur est at lobortis. Nullam quis risus eget urna mollis ornare vel eu leo.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Want to see something else added? &lt;a href=&quot;https://github.com/poole/poole/issues/new&quot;&gt;Open an issue.&lt;/a&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>What's Jekyll?</title>
+   <link href="http://j-griffith.github.com/blog/whats-jekyll"/>
+   <updated>2013-12-31T00:00:00-07:00</updated>
+   <id>http://j-griffith.github.com/blog/whats-jekyll</id>
+   <content type="html">&lt;p&gt;&lt;a href=&quot;http://jekyllrb.com&quot;&gt;Jekyll&lt;/a&gt; is a static site generator, an open-source tool for creating simple yet powerful websites of all shapes and sizes. From &lt;a href=&quot;https://github.com/jekyll/jekyll/blob/master/README.markdown&quot;&gt;the project&#39;s readme&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;p&gt;Jekyll is a simple, blog aware, static site generator. It takes a template directory [...] and spits out a complete, static website suitable for serving with Apache or your favorite web server. This is also the engine behind GitHub Pages, which you can use to host your project’s page or blog right here from GitHub.&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;p&gt;It&#39;s an immensely useful tool. Find out more by &lt;a href=&quot;https://github.com/jekyll/jekyll&quot;&gt;visiting the project on GitHub&lt;/a&gt;.&lt;/p&gt;
+</content>
+ </entry>
+ 
+
+</feed>
