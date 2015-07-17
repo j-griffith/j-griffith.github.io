@@ -1,9 +1,7 @@
 ---
+theme :
+  name : twitter
 layout: default
 ---
-
-<div class="content">    
-	{% include post_header.html %}
-    {{ content }}		
-</div>
-    
+{% include JB/setup %}
+{% include themes/twitter/post.html %}
