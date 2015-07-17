@@ -12,3 +12,4 @@ http://username.github.io/styles.css
 http://username.github.io/tags.html
 
 http://username.github.io/2015/07/16/volume-attach-code-flow-in-cinder
+http://username.github.io/2014/12/08/openstack-live-migration-with-cinder-backed-instances
