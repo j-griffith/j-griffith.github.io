@@ -60,7 +60,8 @@ ubuntu@fluffy-master:~$ nova image-list
 ```
 
 ```
-ubuntu@fluffy-master:~$ cinder create --image-id afaa2feb-3a58-4e72-bebd-38f66bd0b611 --display-name trusty-volume 10
+ubuntu@fluffy-master:~$ cinder create --image-id \
+afaa2feb-3a58-4e72-bebd-38f66bd0b611 --display-name trusty-volume 10
 +---------------------------------------+--------------------------------------+
 | Property                              | Value |
 +---------------------------------------+--------------------------------------+
@@ -100,7 +101,8 @@ ubuntu@fluffy-master:~$cinder list
 ```
 
 ```
-ubuntu@fluffy-master:~$ nova boot --flavor 2 --block-device-mapping vda=6419112b-bf40-4994-809f-12dce25f5f1f --key-name fluffycloud trusty-migrate
+ubuntu@fluffy-master:~$ nova boot --flavor 2 --block-device-mapping \
+vda=6419112b-bf40-4994-809f-12dce25f5f1f --key-name fluffycloud trusty-migrate
 +--------------------------------------+--------------------------------------------------+
 | Property                             | Value                                            |
 +--------------------------------------+--------------------------------------------------+
@@ -183,7 +185,8 @@ ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
 ```
 
 ```
-    ubuntu@fluffy-master:~$ubuntu@fluffy-master:~$ nova live-migration 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
+    ubuntu@fluffy-master:~$ubuntu@fluffy-master:~$ nova live-migration \
+	9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
 ```
 
 ```
