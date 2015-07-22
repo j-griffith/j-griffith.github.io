@@ -102,83 +102,83 @@ ubuntu@fluffy-master:~$cinder list
 ```
 ubuntu@fluffy-master:~$ nova boot --flavor 2 --block-device-mapping vda=6419112b-bf40-4994-809f-12dce25f5f1f --key-name fluffycloud trusty-migrate
 +--------------------------------------+--------------------------------------------------+
-| Property | Value |
+| Property                             | Value                                            |
 +--------------------------------------+--------------------------------------------------+
-| OS-DCF:diskConfig                    | MANUAL
-| OS-EXT-AZ:availability_zone          | nova |
-| OS-EXT-SRV-ATTR:host                 | - |
-| OS-EXT-SRV-ATTR:hypervisor_hostname  | - |
-| OS-EXT-SRV-ATTR:instance_name        | instance-00000002 |
-| OS-EXT-STS:power_state               | 0 |
-| OS-EXT-STS:task_state                | scheduling |
-| OS-EXT-STS:vm_state                  | building |
-| OS-SRV-USG:launched_at               | - |
-| OS-SRV-USG:terminated_at             | - |
-| accessIPv4                           | |
-| accessIPv6                           | |
-| adminPass                            | rKL9sfs2vPs4 |
-| config_drive                         | |
-| created                              | 2014-12-08T17:41:39Z |
-| flavor                               | m1.small (2) |
-| hostId                               | |
-| id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |
-| image                                | Attempt to boot from volume - no image supplied |
-| key_name                             | fluffycloud |
-| metadata                             | {} |
-| name                                 | trusty-migrate                |
-| os-extended-volumes:volumes_attached | [{&quot;id&quot;: &quot;6419112b-bf40-4994-809f-12dce25f5f1f&quot;}] |
-| progress                             | 0 |
-| security_groups                      | default |
-| status                               | BUILD |
-| tenant_id                            | 56dc791650074cc9a2858bd5053a7116 |
-| updated                              | 2014-12-08T17:41:39Z |
-| user_id                              | 3dcc1572d7594a4eb6b043b819e415de |
+| OS-DCF:diskConfig                    | MANUAL                                           |
+| OS-EXT-AZ:availability_zone          | nova                                             |
+| OS-EXT-SRV-ATTR:host                 | -                                                |
+| OS-EXT-SRV-ATTR:hypervisor_hostname  | -                                                |
+| OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                |
+| OS-EXT-STS:power_state               | 0                                                |
+| OS-EXT-STS:task_state                | scheduling                                       |
+| OS-EXT-STS:vm_state                  | building                                         |
+| OS-SRV-USG:launched_at               | -                                                |
+| OS-SRV-USG:terminated_at             | -                                                |
+| accessIPv4                           |                                                  |
+| accessIPv6                           |                                                  |
+| adminPass                            | rKL9sfs2vPs4                                     |
+| config_drive                         |                                                  |
+| created                              | 2014-12-08T17:41:39Z                             |
+| flavor                               | m1.small (2)                                     |
+| hostId                               |                                                  |
+| id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904             |
+| image                                | Attempt to boot from volume - no image supplied  |
+| key_name                             | fluffycloud                                      |
+| metadata                             | {}                                               |
+| name                                 | trusty-migrate                                   |
+| os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f&quot;}]   |
+| progress                             | 0                                                |
+| security_groups                      | default                                          |
+| status                               | BUILD                                            |
+| tenant_id                            | 56dc791650074cc9a2858bd5053a7116                 |
+| updated                              | 2014-12-08T17:41:39Z                             |
+| user_id                              | 3dcc1572d7594a4eb6b043b819e415de                 |
 +--------------------------------------+--------------------------------------------------+
 ```
 
 ```
 ubuntu@fluffy-master:~$ nova list
 +--------------------------------------+----------------+--------+------------+-------------+------------------+
-| ID | Name | Status | Task State | Power State | Networks |
+| ID                                   | Name           | Status | Task State | Power State | Networks         |
 +--------------------------------------+----------------+--------+------------+-------------+------------------+
-| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | - | Running | private=10.1.0.2 |
+| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | -          | Running     | private=10.1.0.2 |
 +--------------------------------------+----------------+--------+------------+-------------+------------------+
 ```
 
 ```
 ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
 +--------------------------------------+----------------------------------------------------------+
-| Property | Value |
+| Property                             | Value                                                    |
 +--------------------------------------+----------------------------------------------------------+
-| OS-DCF:diskConfig | MANUAL |
-| OS-EXT-AZ:availability_zone | nova |
-| OS-EXT-SRV-ATTR:host | fluffy-compute |
-| OS-EXT-SRV-ATTR:hypervisor_hostname | fluffy-compute |
-| OS-EXT-SRV-ATTR:instance_name | instance-00000002 |
-| OS-EXT-STS:power_state | 1 |
-| OS-EXT-STS:task_state | - |
-| OS-EXT-STS:vm_state | active |
-| OS-SRV-USG:launched_at | 2014-12-08T17:41:47.000000 |
-| OS-SRV-USG:terminated_at | - |
-| accessIPv4 | |
-| accessIPv6 | |
-| config_drive | |
-| created | 2014-12-08T17:41:39Z |
-| flavor | m1.small (2) |
-| hostId | 48adbabbab9babab4c8948d3478e9d2fae8ffb407bab1ca21a843981 |
-| id | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |
-| image | Attempt to boot from volume - no image supplied |
-| key_name | fluffycloud |
-| metadata | {} |
-| name | trusty-migrate |
-| os-extended-volumes:volumes_attached | [{&quot;id&quot;: &quot;6419112b-bf40-4994-809f-12dce25f5f1f&quot;}] |
-| private network | 10.1.0.2 |
-| progress | 0 |
-| security_groups | default |
-| status | ACTIVE |
-| tenant_id | 56dc791650074cc9a2858bd5053a7116 |
-| updated | 2014-12-08T17:41:47Z |
-| user_id | 3dcc1572d7594a4eb6b043b819e415de |
+| OS-DCF:diskConfig                    | MANUAL                                                   |
+| OS-EXT-AZ:availability_zone          | nova                                                     |
+| OS-EXT-SRV-ATTR:host                 | fluffy-compute                                           |
+| OS-EXT-SRV-ATTR:hypervisor_hostname  | fluffy-compute                                           |
+| OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                        |
+| OS-EXT-STS:power_state               | 1                                                        |
+| OS-EXT-STS:task_state                | -                                                        |
+| OS-EXT-STS:vm_state                  | active                                                   |
+| OS-SRV-USG:launched_at               | 2014-12-08T17:41:47.000000                               |
+| OS-SRV-USG:terminated_at             | -                                                        |
+| accessIPv4                           |                                                          |
+| accessIPv6                           |                                                          |
+| config_drive                         |                                                          |
+| created                              | 2014-12-08T17:41:39Z                                     |
+| flavor                               | m1.small (2)                                             |
+| hostId                               | 48adbabbab9babab4c8948d3478e9d2fae8ffb407bab1ca21a843981 |
+| id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904                     |
+| image                                | Attempt to boot from volume - no image supplied          |
+| key_name                             | fluffycloud                                              |
+| metadata                             | {}                                                       |
+| name                                 | trusty-migrate                                           |
+| os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f;}]                |
+| private network                      | 10.1.0.2                                                 |
+| progress                             | 0                                                        |
+| security_groups                      | default                                                  |
+| status                               | ACTIVE                                                   |
+| tenant_id                            | 56dc791650074cc9a2858bd5053a7116                         |
+| updated                              | 2014-12-08T17:41:47Z                                     |
+| user_id                              | 3dcc1572d7594a4eb6b043b819e415de                         |
 +--------------------------------------+----------------------------------------------------------+
 ```
 
@@ -207,37 +207,37 @@ ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
 ```
     ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
     +--------------------------------------+----------------------------------------------------------+
-    | Property | Value |
+    | Property                             | Value                                                    |
     +--------------------------------------+----------------------------------------------------------+
-    | OS-DCF:diskConfig | MANUAL |
-    | OS-EXT-AZ:availability_zone | nova |
-    | OS-EXT-SRV-ATTR:host | fluffy-master |
-    | OS-EXT-SRV-ATTR:hypervisor_hostname | fluffy-master |
-    | OS-EXT-SRV-ATTR:instance_name | instance-00000002 |
-    | OS-EXT-STS:power_state | 1 |
-    | OS-EXT-STS:task_state | - |
-    | OS-EXT-STS:vm_state | active |
-    | OS-SRV-USG:launched_at | 2014-12-08T17:41:47.000000 |
-    | OS-SRV-USG:terminated_at | - |
-    | accessIPv4 | |
-    | accessIPv6 | |
-    | config_drive | |
-    | created | 2014-12-08T17:41:39Z |
-    | flavor | m1.small (2) |
-    | hostId | 97a1a99eaf8e1fab2ea7cb0be641ff55f2da5df4e68d0ecb62293e00 |
-    | id | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 |
-    | image | Attempt to boot from volume - no image supplied |
-    | key_name | fluffycloud |
-    | metadata | {} |
-    | name | trusty-migrate |
-    | os-extended-volumes:volumes_attached | [{&quot;id&quot;: &quot;6419112b-bf40-4994-809f-12dce25f5f1f&quot;}] |
-    | private network | 10.1.0.2 |
-    | progress | 0 |
-    | security_groups | default |
-    | status | ACTIVE |
-    | tenant_id | 56dc791650074cc9a2858bd5053a7116 |
-    | updated | 2014-12-08T17:41:47Z |
-    | user_id | 3dcc1572d7594a4eb6b043b819e415de |
+    | OS-DCF:diskConfig                    | MANUAL                                                   |
+    | OS-EXT-AZ:availability_zone          | nova                                                     |
+    | OS-EXT-SRV-ATTR:host                 | fluffy-master                                            |
+    | OS-EXT-SRV-ATTR:hypervisor_hostname  | fluffy-master                                            |
+    | OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                        |
+    | OS-EXT-STS:power_state               | 1                                                        |
+    | OS-EXT-STS:task_state                | -                                                        |
+    | OS-EXT-STS:vm_state                  | active                                                   |
+    | OS-SRV-USG:launched_at               | 2014-12-08T17:41:47.000000                               |
+    | OS-SRV-USG:terminated_at             | -                                                        |
+    | accessIPv4                           |                                                          |
+    | accessIPv6                           |                                                          |
+    | config_drive                         |                                                          |
+    | created                              | 2014-12-08T17:41:39Z                                     |
+    | flavor                               | m1.small (2)                                             |
+    | hostId                               | 97a1a99eaf8e1fab2ea7cb0be641ff55f2da5df4e68d0ecb62293e00 |
+    | id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904                     |
+    | image                                | Attempt to boot from volume - no image supplied          |
+    | key_name                             | fluffycloud                                              |
+    | metadata                             | {}                                                       |
+    | name                                 | trusty-migrate                                           |
+    | os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f}]                 |
+    | private network                      | 10.1.0.2                                                 |
+    | progress                             | 0                                                        |
+    | security_groups                      | default                                                  |
+    | status                               | ACTIVE                                                   |
+    | tenant_id                            | 56dc791650074cc9a2858bd5053a7116                         |
+    | updated                              | 2014-12-08T17:41:47Z                                     |
+    | user_id                              | 3dcc1572d7594a4eb6b043b819e415de                         |
     +--------------------------------------+----------------------------------------------------------+
 ```
 
