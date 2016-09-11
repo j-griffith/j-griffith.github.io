@@ -1,0 +1,257 @@
+<!doctype html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]><html class="no-js lt-ie9 lt-ie8" lang="en"><![endif]-->
+<!--[if (IE 8)&!(IEMobile)]><html class="no-js lt-ie9" lang="en"><![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"><!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<title><span data-rel="title">OpenStack Cinders reference implementation</span> &#8211; I'm just sayin!</title>
+<meta name="description" content="Random, sometimes shallow thoughts about stuff.">
+<meta name="keywords" content="">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="/images/">
+<meta name="twitter:title" content="<span data-rel="title">OpenStack Cinders reference implementation</span>">
+<meta name="twitter:description" content="Random, sometimes shallow thoughts about stuff.">
+<meta name="twitter:creator" content="@jdg_8">
+
+<!-- Open Graph -->
+<meta property="og:locale" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:title" content="<span data-rel="title">OpenStack Cinders reference implementation</span>">
+<meta property="og:description" content="Random, sometimes shallow thoughts about stuff.">
+<meta property="og:url" content="/2016/02/12/openstack-cinders-reference-implementation/">
+<meta property="og:site_name" content="I'm just sayin!">
+
+
+
+
+
+<link rel="canonical" href="/2016/02/12/openstack-cinders-reference-implementation/">
+<link href="/feed.xml" type="application/atom+xml" rel="alternate" title="I'm just sayin! Feed">
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<!-- Webfonts -->
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic" rel="stylesheet" type="text/css">
+
+<meta http-equiv="cleartype" content="on">
+
+<!-- Load Modernizr -->
+<script src="/assets/js/vendor/modernizr-2.6.2.custom.min.js"></script>
+
+<!-- Icons -->
+<!-- 16x16 -->
+<link rel="shortcut icon" href="/favicon.ico">
+<!-- 32x32 -->
+<link rel="shortcut icon" href="/favicon.png">
+<!-- 57x57 (precomposed) for iPhone 3GS, pre-2011 iPod Touch and older Android devices -->
+<link rel="apple-touch-icon-precomposed" href="/images/apple-touch-icon-precomposed.png">
+<!-- 72x72 (precomposed) for 1st generation iPad, iPad 2 and iPad mini -->
+<link rel="apple-touch-icon-precomposed" sizes="72x72" href="/images/apple-touch-icon-72x72-precomposed.png">
+<!-- 114x114 (precomposed) for iPhone 4, 4S, 5 and post-2011 iPod Touch -->
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/images/apple-touch-icon-114x114-precomposed.png">
+<!-- 144x144 (precomposed) for iPad 3rd and 4th generation -->
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/images/apple-touch-icon-144x144-precomposed.png">
+
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="/images/avatar.jpg" alt="John Griffith photo" class="author-photo">
+					<h4>John Griffith</h4>
+					<p>Software Developer (among other things) enjoys new technologies and talking with others about them.</p>
+				</li>
+				<li><a href="/about/"><span class="btn btn-inverse">Learn More</span></a></li>
+				<li>
+					<a href="mailto:john.griffith8@gmail.com"><i class="fa fa-fw fa-envelope"></i> Email</a>
+				</li>
+				<li>
+					<a href="https://twitter.com/jdg_8"><i class="fa fa-fw fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="https://google.com/john.griffith8@gmail.com"><i class="fa fa-fw fa-google-plus"></i> Google+</a>
+				</li>
+				
+				<li>
+					<a href="https://github.com/j-griffith"><i class="fa fa-fw fa-github"></i> GitHub</a>
+				</li>
+				
+				
+				
+				
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/tags/">All Tags</a></li>
+			</ul>
+		</li>
+		
+	    
+	    <li><a href="/theme-setup/" >Theme Setup</a></li>
+	  
+	    
+	    <li><a href="http://mademistakes.com" target="_blank">External Link</a></li>
+	  
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/2016/02/12/openstack-cinders-reference-implementation/" rel="bookmark" title="<span data-rel="title">OpenStack Cinders reference implementation</span>"><span data-rel="title">OpenStack Cinders reference implementation</span></a></h1>
+        
+        <h2><span class="entry-date date published"><time datetime="2016-02-12T09:51:33-07:00">February 12, 2016</time></span></h2>
+        
+        <p class="entry-reading-time">
+          <i class="fa fa-clock-o"></i>
+          
+Reading time ~6 minutes
+        </p><!-- /.entry-reading-time -->
+        
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <p><span data-rel="content"></span></p>
+
+<p>
+  As many are fully aware, over the years I&#8217;ve had pretty strong opinions about good and bad things in the OpenStack Cinder project.  Let&#8217;s be clear, most of the &#8220;bad&#8221; are criticisms against myself and how things evolved than they are about the project or the people contributing to it.
+</p>
+
+<p>
+  Lately there&#8217;s been a resurgence of the &#8220;LVM as a reference implementation&#8221; discussion due to a comment I made on twitter about one off vendor features being in the Cinder API.  This created quite the buzz, ranging from &#8220;LVM sucks&#8221; to &#8220;Criticism doesn&#8217;t help the project&#8221;.  All of that aside, I wanted to point a few things out for people to think about on this topic.
+</p>
+
+<p>
+  First, keep in mind the purpose of a &#8220;reference&#8221; implementation.  The WHOLE point of a reference implementation is to provide a reference for people to use in development.  LVM has been the reference because it most closely fits the model that other backend-devices use.  In particular iSCSI targets attached to LVM volumes, in my opinion provides a really flexible and dynamic transport/connect mechanism in a cloud environment.  Some argue that things like NFS are better.. and maybe in some cases that&#8217;s true, but the original design and architecture in OpenStack was to provide Block Storage, so in that context iSCSI was a pretty cheap and flexible way to go about it.  I&#8217;d also point out that iSCSI and networking in general have come a VERY long way in the last 5+ years!  This isn&#8217;t your old iSCSI where people were trying to attach storage over a 1G WAN and shockingly had &#8220;issues&#8221;.
+</p>
+
+<p>
+  So, what&#8217;s wrong with LVM?  Well, if you ask me the only thing wrong with it is that the OpenStack community only has a very few people that are really interested in paying any attention to it.  There was a comment last week to the effect that &#8220;using LVM as a reference implementation makes me sad&#8221;, my response was &#8220;why&#8221;?  There seems to be a misconception that there are things LVM can&#8217;t do that other OSS products can (in a Cinder context), but I&#8217;ve yet to figure out what those things are?  If you look at the code on Github and do a check between features in LVM and features in other OSS drivers you won&#8217;t find &#8220;missing&#8221; API calls.  Of course, have fun trying to figure out the structure with the whole feature-class thing going on in the base driver to link things together and figure out what&#8217;s actually real and what&#8217;s not (I&#8217;ll save that whole topic for another day&#8230; or just keep it between me and the Cinder community).
+</p>
+
+<p>
+  The point is, this statement that &#8220;LVM is bad because it can&#8217;t do things&#8221; is just plain false.  There&#8217;s no Cinder API feature that it&#8217;s not capable of, the only exception to this is some of the custom one-off API calls that have been added specifically for one or two proprietary vendors that nobody was creative enough, or spent the time or effort on to implement in the LVM driver.  We used to have a *rule* that if you wanted to add a new feature or API call to Cinder, you had to FIRST implement it in the LVM driver.  Over time however Cinder grew, and folks decided this wasn&#8217;t such a big deal, and there should be exceptions.  So some vendors were allowed to add their own custom things.  The result, API calls in Cinder that may or may not work, and nobody EVER spending the time to go back and implement them in the Reference/LVM driver.  What&#8217;s also very telling here for me is to point out that these features that I was complaining about are NOT available in the other Open Source drivers either, Ceph included.  I&#8217;d also continue to assert as I have that the ONLY thing lacking with the LVM driver is interest from developers and the perpetual off-handed comments by people who don&#8217;t actually even know anything about how LVM works or the things that can be done with it.  Rather than say &#8220;LVM sucks&#8221;, maybe you should educate yourself on LVM a bit more and write some cinder/volume/drivers/lvm.py code.  I&#8217;ll admit, it requires a bit more effort than some other backends, and you certainly have to be creative.. but that&#8217;s the fun part.
+</p>
+
+<p>
+  That brings me to my next point.  There&#8217;s been a few snarky comments about Ceph as the reference implementation.  Even better, there&#8217;s been some suggestions that &#8220;Vendors are thwarting this&#8221;, I find this almost as hilarious as I find it sad.  I&#8217;ve actually proposed the topic to a number of folks over the years, including at the Summit in Paris on a public panel with Sage Weil (creator and overall Ceph GURU).  The overwhelming response was &#8220;probably not a good idea&#8221;.  The reason for most folks that had that opinion was because Ceph is VERY different than any other storage backend.  In terms of a reference, it doesn&#8217;t necessarily help other technologies (iSCSI being predominant) .  Now, let me also say it again publicly and very clearly, I think Ceph is AWESOME, as do a lot of people deploying OpenStack.  It is not however the ONLY option.  If we wanted to deliver a product instead of a framework then yes, that might be what we&#8217;d want to consider.  The fact is though, we (OpenStack) are pretty explicit that we are NOT delivering a product, but we ARE building a framework.  I&#8217;d also point out that there are a lot of use cases out there, and there is no one product/backend that meets all of them.  There are very few large deployments these days that only have a single backend for Cinder.  Yes, I know there are exceptions here, but I&#8217;m saying &#8220;majority&#8221;.
+</p>
+
+<p>
+  So where are we now?  Well, given where we are now maybe we should revisit this.  Here&#8217;s why; it turns out that earlier on a number of vendors didn&#8217;t follow the reference implementation anyway.  They either didn&#8217;t understand how it worked, didn&#8217;t care or didn&#8217;t like it.  So a number of the methods in the internal API do &#8220;different&#8221; things (or nothing) depending on the driver.  The problem with this is that then, a new developer comes along and wants to implement a driver.  They happen to notice Vendor-X&#8217;s driver does things a certain way that seems to align with their product so they use it as a template.  Now we have another driver that&#8217;s diverged.  Then the next developer comes along&#8230; he/she ends up taking some pieces from one driver, combined with some pieces from another driver that somebody in IRC worked on and pointed to in order to answer some questions.  What you end up with is inconsistency across all the drivers and a very tangled mess.  Remember what I said about criticism earlier?  Well, this is something that I criticize myself for.  As the person that started Cinder and the PTL for the first few years I should have caught these disparities in reviews and made sure they were fixed up.  I also should&#8217;ve made the reference cleaner and more clear so that there wouldn&#8217;t be questions about it.  I also should&#8217;ve continued my objections via -2&#8217;s for adding API methods that were NOT in the reference implementation.  Lessons learned, and that&#8217;s where the comments I&#8217;ve made on twitter came from over the past week.
+</p>
+
+<p>
+  <em><strong>I&#8217;m all for revisiting the topic of Cinder&#8217;s reference implementation, BUT do me a favor; if you&#8217;re going to participate please do some homework.  Make sure you at least have a general idea of what the capabilities, use cases and problems we&#8217;re trying to solve are.  Also, ask the question, are we &#8220;building a reference, or a default&#8221;, because they&#8217;re not necessarily the same thing.</strong></em>
+</p>
+
+<p>
+  &nbsp;
+</p>
+<p>&lt;/span&gt;</p>
+
+      <footer class="entry-meta">
+        <span class="entry-tags"></span>
+        
+        <div class="social-share">
+  <ul class="socialcount socialcount-small inline-list">
+    <li class="facebook"><a href="https://www.facebook.com/sharer/sharer.php?u=/2016/02/12/openstack-cinders-reference-implementation/" title="Share on Facebook"><span class="count"><i class="fa fa-facebook-square"></i> Like</span></a></li>
+    <li class="twitter"><a href="https://twitter.com/intent/tweet?text=/2016/02/12/openstack-cinders-reference-implementation/" title="Share on Twitter"><span class="count"><i class="fa fa-twitter-square"></i> Tweet</span></a></li>
+    <li class="googleplus"><a href="https://plus.google.com/share?url=/2016/02/12/openstack-cinders-reference-implementation/" title="Share on Google Plus"><span class="count"><i class="fa fa-google-plus-square"></i> +1</span></a></li>
+  </ul>
+</div><!-- /.social-share -->
+      </footer>
+    </div><!-- /.entry-content -->
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+    <div class="read-more">
+  
+    <div class="read-more-header">
+      <a href="/volume-attach-code-flow-in-cinder/" class="read-more-btn">Read More</a>
+    </div><!-- /.read-more-header -->
+    <div class="read-more-content">
+      <h3><a href="/cinder-providing-block-storage-for-more-than-just-nova/" title="Cinder - Block Storage for things other than Nova">Cinder - Block Storage for things other than Nova</a></h3>
+      <p># Cinder as storage for Docker (part 1 of 2)A lot of you may be familiar with Cinder, the OpenStack Block Storage project that's been aro...&hellip; <a href="/cinder-providing-block-storage-for-more-than-just-nova/">Continue reading</a></p>
+    </div><!-- /.read-more-content -->
+  
+  <div class="read-more-list">
+    
+      <div class="list-item">
+        <h4><a href="/volume-attach-code-flow-in-cinder/" title="Volume attach code flow in Cinder">Volume attach code flow in Cinder</a></h4>
+        <span>Published on July 16, 2015</span>
+      </div><!-- /.list-item -->
+    
+      <div class="list-item">
+        <h4><a href="/openstack-live-migration-with-cinder-backed-instances/" title="OpenStack Live Migration With Cinder Backed Instances">OpenStack Live Migration With Cinder Backed Instances</a></h4>
+        <span>Published on December 08, 2014</span>
+      </div><!-- /.list-item -->
+    
+  </div><!-- /.read-more-list -->
+</div><!-- /.read-more -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2016 John Griffith. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> using the <a href="https://mademistakes.com/work/hpstr-jekyll-theme/" rel="nofollow">HPSTR Theme</a>.</span>
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/assets/js/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<script src="/assets/js/scripts.min.js"></script>
+
+
+
+
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'jgriffith'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function () {
+            var s = document.createElement('script'); s.async = true;
+            s.type = 'text/javascript';
+            s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+            (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+        }());
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+	        
+
+</body>
+</html>

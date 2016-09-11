@@ -1,0 +1,464 @@
+<!doctype html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]><html class="no-js lt-ie9 lt-ie8" lang="en"><![endif]-->
+<!--[if (IE 8)&!(IEMobile)]><html class="no-js lt-ie9" lang="en"><![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"><!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<title>OpenStack Live Migration With Cinder Backed Instances &#8211; I'm just sayin!</title>
+<meta name="description" content="Random, sometimes shallow thoughts about stuff.">
+<meta name="keywords" content="">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="/images/">
+<meta name="twitter:title" content="OpenStack Live Migration With Cinder Backed Instances">
+<meta name="twitter:description" content="Random, sometimes shallow thoughts about stuff.">
+<meta name="twitter:creator" content="@jdg_8">
+
+<!-- Open Graph -->
+<meta property="og:locale" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenStack Live Migration With Cinder Backed Instances">
+<meta property="og:description" content="Random, sometimes shallow thoughts about stuff.">
+<meta property="og:url" content="/openstack-live-migration-with-cinder-backed-instances/">
+<meta property="og:site_name" content="I'm just sayin!">
+
+
+
+
+
+<link rel="canonical" href="/openstack-live-migration-with-cinder-backed-instances/">
+<link href="/feed.xml" type="application/atom+xml" rel="alternate" title="I'm just sayin! Feed">
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<!-- Webfonts -->
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic" rel="stylesheet" type="text/css">
+
+<meta http-equiv="cleartype" content="on">
+
+<!-- Load Modernizr -->
+<script src="/assets/js/vendor/modernizr-2.6.2.custom.min.js"></script>
+
+<!-- Icons -->
+<!-- 16x16 -->
+<link rel="shortcut icon" href="/favicon.ico">
+<!-- 32x32 -->
+<link rel="shortcut icon" href="/favicon.png">
+<!-- 57x57 (precomposed) for iPhone 3GS, pre-2011 iPod Touch and older Android devices -->
+<link rel="apple-touch-icon-precomposed" href="/images/apple-touch-icon-precomposed.png">
+<!-- 72x72 (precomposed) for 1st generation iPad, iPad 2 and iPad mini -->
+<link rel="apple-touch-icon-precomposed" sizes="72x72" href="/images/apple-touch-icon-72x72-precomposed.png">
+<!-- 114x114 (precomposed) for iPhone 4, 4S, 5 and post-2011 iPod Touch -->
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/images/apple-touch-icon-114x114-precomposed.png">
+<!-- 144x144 (precomposed) for iPad 3rd and 4th generation -->
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/images/apple-touch-icon-144x144-precomposed.png">
+
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="/images/avatar.jpg" alt="John Griffith photo" class="author-photo">
+					<h4>John Griffith</h4>
+					<p>Software Developer (among other things) enjoys new technologies and talking with others about them.</p>
+				</li>
+				<li><a href="/about/"><span class="btn btn-inverse">Learn More</span></a></li>
+				<li>
+					<a href="mailto:john.griffith8@gmail.com"><i class="fa fa-fw fa-envelope"></i> Email</a>
+				</li>
+				<li>
+					<a href="https://twitter.com/jdg_8"><i class="fa fa-fw fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="https://google.com/john.griffith8@gmail.com"><i class="fa fa-fw fa-google-plus"></i> Google+</a>
+				</li>
+				
+				<li>
+					<a href="https://github.com/j-griffith"><i class="fa fa-fw fa-github"></i> GitHub</a>
+				</li>
+				
+				
+				
+				
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/tags/">All Tags</a></li>
+			</ul>
+		</li>
+		
+	    
+	    <li><a href="/theme-setup/" >Theme Setup</a></li>
+	  
+	    
+	    <li><a href="http://mademistakes.com" target="_blank">External Link</a></li>
+	  
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/openstack-live-migration-with-cinder-backed-instances/" rel="bookmark" title="OpenStack Live Migration With Cinder Backed Instances">OpenStack Live Migration With Cinder Backed Instances</a></h1>
+        
+        <h2><span class="entry-date date published"><time datetime="2014-12-08T00:00:00-07:00">December 08, 2014</time></span></h2>
+        
+        <p class="entry-reading-time">
+          <i class="fa fa-clock-o"></i>
+          
+Reading time ~8 minutes
+        </p><!-- /.entry-reading-time -->
+        
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<p>Over the last several weeks I keep getting questions about Live Migration, does it work, how do you configure it, what are the requirements to use it and so on.  To be honest up until recently I hadn’t actually dove into Live Migration so I tried it out (and failed), then started asking around and resorting to Google Searches.  The good thing is, there’s TONS of information out there, problem is, there’s TONS of information out there.  The bad thing here is the info isn’t all that consistent.  Like many things there’s always more than one way to achieve an end result, Live Migration is really no different.  So I thought I’d try and write up what worked for me and in my opinion was the simplest method to use.</p>
+
+<p>First off, for those that aren’t familiar; Live Migration of OpenStack Instances is the process of migrating an OpenStack Instance from one Compute Node to another with little or no downtime.  The docs page has a good description here: <a href="http://docs.openstack.org/admin-guide-cloud/content/section_configuring-compute-migrations.html">OpenStack Admin-Guide</a></p>
+
+<p>One of the big misconceptions about Live Migration is that if you’re Instances aren’t stored on a Shared FS or a Shared backend device like CEPH you can’t do Live-Migration.  That’s not true at all, in fact notice the doc has an entry specifically for Volume-Backed Instances.  So let’s take a look at how to create a Volume-Backed Instance using Juno and migrate it from one Compute Host to another.</p>
+
+<p>First, my config; I’ve set up a multi-node deployment using devstack stable/juno.  I went ahead and configured Cinder to run multiple backends, in my case SolidFire and LVM because I wanted to test both and make sure everything worked properly.  For info on Cinder Multi-Backend checkout the wiki here: <a href="https://wiki.openstack.org/wiki/Cinder-multi-backend">Cinder multi-backend</a></p>
+
+<p>I chose to specify ssh as my connection method for live-migration.  There are of course other ways to do this by configuring libvirt and qemu, which you can check out here: <a href="https://libvirt.org/uri.html">libvirt config</a> but rather than do any of that I just wanted to put a simple entry in my nova.conf file and use ssh.  Here’s the libvirt section of my nova.conf:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>[libvirt]
+inject_partition = -2
+use_usb_tablet = False
+cpu_mode = none
+virt_type = kvm
+live_migration_uri = qemu+ssh://root@%s/system
+</code></pre>
+</div>
+
+<p>Notice I’m using root here in my connection.  I’ve used “regular” accounts with sudo permissions before to do remote connections to libvirt, but there’s something about the process from Nova that the Key Verification will fail for any user other than ‘root’.  If anybody knows how to fix this up let me know, It’d be great to learn what I’m missing here.  For those that are interested in more detail, my nova.conf other than the entry here is just the defaults from devstack.  Here’s a link to my nova.conf on the controller/compute: /etc/nova/nova.conf.  I’ve also added a link to my devstack local.conf; in this setup I actually started with a SolidFire deployment and manually updated cinder.conf to do multi-backend with LVM and added the default volume-type: devstack local.conf</p>
+
+<p>So since we’re using ssh and root, you’ve probably guessed we’re going to need to setup ssh keys between our compute nodes.  I went ahead and setup root keys on each of the compute nodes, and installed each machines key on all of the nodes just doing a simple ssh-copy-id.  You may want to get a bit more sophisticated, distribute a key and modify /root/.ssh/config to include entries for each of the compute nodes.  Something like this should do the trick:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Host fluffy-compute
+HostName fluffy-compute
+User root
+IdentityFile ~/.ssh/live-migrationkey.pem
+</code></pre>
+</div>
+
+<p>Verify you can ssh as root to-&gt;from each of the Compute nodes, restart Nova Compute services and you <em>should</em> be ready to go.  Notice there I said <em>should</em>, what i found out was things didn’t work.  I’d get an error message stating that I couldn’t do live migration because I wasn’t using shared storage… huh?  What’s up with that?</p>
+
+<p>So it turns out there was a bug introduced during the Juno development cycle.  You can check out the bug on LaunchPad here:<a href="https://bugs.launchpad.net/nova/+bug/1392773">LP-Bug</a></p>
+
+<p>Fortunately there’s a proposal up for master already that can be pulled down (and hopefully will merge soon), but I was running Juno, so I put together a quick backport to try out.  Note this path isn’t quite complete, needs some method signature updates for the other hypervisors in OpenStack and of course Unit Tests.  Anyway, you can check out what I started via this <a href="https://gist.github.com/j-griffith/5e9be4e6548a03697dc5">gist</a></p>
+
+<p>I went ahead an applied the Juno patch from the gist above, restarted all of my Nova services and tried again.  Here’s how things go:</p>
+
+<p>First, grab the image-id you want to use and create a Cinder Volume with it…</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$ nova image-list
++--------------------------------------+---------------------------------+--------+--------+
+| ID                                   | Name                            | Status | Server |
++--------------------------------------+---------------------------------+--------+--------+
+| 40520350-25c7-4786-9586-5430d52d7663 | RedHat 6.5 Server               | ACTIVE |        |
+| 8a69ae88-a729-4d68-a7e6-25048b1cf885 | RedHat 7.0 Server               | ACTIVE |        |
+| afaa2feb-3a58-4e72-bebd-38f66bd0b611 | Ubuntu 14.04 Server             | ACTIVE |        |
+| 28b77f27-a922-4627-8b1d-f0df627be907 | cirros-0.3.2-x86_64-uec         | ACTIVE |        |
+| 63c173cd-3f5a-49ff-89ab-8c90a1701808 | cirros-0.3.2-x86_64-uec-kernel  | ACTIVE |        |
+| e3aa2ab0-383c-4f75-bdc0-dbee86645ad5 | cirros-0.3.2-x86_64-uec-ramdisk | ACTIVE |        |
++--------------------------------------+---------------------------------+--------+--------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$ cinder create --image-id \
+afaa2feb-3a58-4e72-bebd-38f66bd0b611 --display-name trusty-volume 10
++---------------------------------------+--------------------------------------+
+| Property                              | Value |
++---------------------------------------+--------------------------------------+
+| attachments                           | []                                   |
+| availability_zone                     | nova                                 |
+| bootable                              | false                                |
+| consistencygroup_id                   | None                                 |
+| created_at                            | 2014-12-08T17:34:50.000000           |
+| description                           | None                                 |
+| encrypted                             | False                                |
+| id                                    | 6419112b-bf40-4994-809f-12dce25f5f1f |
+| metadata                              | {}                                   |
+| name                                  | trusty-volume                        |
+| os-vol-host-attr:host                 | None                                 |
+| os-vol-mig-status-attr:migstat        | None                                 |
+| os-vol-mig-status-attr:name_id        | None                                 |
+| os-vol-tenant-attr:tenant_id          | 56dc791650074cc9a2858bd5053a7116     |
+| os-volume-replication:driver_data     | None                                 |
+| os-volume-replication:extended_status | None                                 |
+| replication_status                    | disabled                             |
+| size                                  | 10                                   |
+| snapshot_id                           | None                                 |
+| source_volid                          | None                                 |
+| status                                | creating                             |
+| user_id                               | 3dcc1572d7594a4eb6b043b819e415de     |
+| volume_type                           | solidfire                            |
++---------------------------------------+--------------------------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$cinder list
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+
+| ID                                   | Status    | Name          | Size | Volume Type | Bootable | Attached to |
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+
+| 6419112b-bf40-4994-809f-12dce25f5f1f | available | trusty-volume | 10   | solidfire   | true     |             |
++--------------------------------------+-----------+---------------+------+-------------+----------+-------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$ nova boot --flavor 2 --block-device-mapping \
+vda=6419112b-bf40-4994-809f-12dce25f5f1f --key-name fluffycloud trusty-migrate
++--------------------------------------+--------------------------------------------------+
+| Property                             | Value                                            |
++--------------------------------------+--------------------------------------------------+
+| OS-DCF:diskConfig                    | MANUAL                                           |
+| OS-EXT-AZ:availability_zone          | nova                                             |
+| OS-EXT-SRV-ATTR:host                 | -                                                |
+| OS-EXT-SRV-ATTR:hypervisor_hostname  | -                                                |
+| OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                |
+| OS-EXT-STS:power_state               | 0                                                |
+| OS-EXT-STS:task_state                | scheduling                                       |
+| OS-EXT-STS:vm_state                  | building                                         |
+| OS-SRV-USG:launched_at               | -                                                |
+| OS-SRV-USG:terminated_at             | -                                                |
+| accessIPv4                           |                                                  |
+| accessIPv6                           |                                                  |
+| adminPass                            | rKL9sfs2vPs4                                     |
+| config_drive                         |                                                  |
+| created                              | 2014-12-08T17:41:39Z                             |
+| flavor                               | m1.small (2)                                     |
+| hostId                               |                                                  |
+| id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904             |
+| image                                | Attempt to boot from volume - no image supplied  |
+| key_name                             | fluffycloud                                      |
+| metadata                             | {}                                               |
+| name                                 | trusty-migrate                                   |
+| os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f&amp;quot;}]   |
+| progress                             | 0                                                |
+| security_groups                      | default                                          |
+| status                               | BUILD                                            |
+| tenant_id                            | 56dc791650074cc9a2858bd5053a7116                 |
+| updated                              | 2014-12-08T17:41:39Z                             |
+| user_id                              | 3dcc1572d7594a4eb6b043b819e415de                 |
++--------------------------------------+--------------------------------------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$ nova list
++--------------------------------------+----------------+--------+------------+-------------+------------------+
+| ID                                   | Name           | Status | Task State | Power State | Networks         |
++--------------------------------------+----------------+--------+------------+-------------+------------------+
+| 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | -          | Running     | private=10.1.0.2 |
++--------------------------------------+----------------+--------+------------+-------------+------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
++--------------------------------------+----------------------------------------------------------+
+| Property                             | Value                                                    |
++--------------------------------------+----------------------------------------------------------+
+| OS-DCF:diskConfig                    | MANUAL                                                   |
+| OS-EXT-AZ:availability_zone          | nova                                                     |
+| OS-EXT-SRV-ATTR:host                 | fluffy-compute                                           |
+| OS-EXT-SRV-ATTR:hypervisor_hostname  | fluffy-compute                                           |
+| OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                        |
+| OS-EXT-STS:power_state               | 1                                                        |
+| OS-EXT-STS:task_state                | -                                                        |
+| OS-EXT-STS:vm_state                  | active                                                   |
+| OS-SRV-USG:launched_at               | 2014-12-08T17:41:47.000000                               |
+| OS-SRV-USG:terminated_at             | -                                                        |
+| accessIPv4                           |                                                          |
+| accessIPv6                           |                                                          |
+| config_drive                         |                                                          |
+| created                              | 2014-12-08T17:41:39Z                                     |
+| flavor                               | m1.small (2)                                             |
+| hostId                               | 48adbabbab9babab4c8948d3478e9d2fae8ffb407bab1ca21a843981 |
+| id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904                     |
+| image                                | Attempt to boot from volume - no image supplied          |
+| key_name                             | fluffycloud                                              |
+| metadata                             | {}                                                       |
+| name                                 | trusty-migrate                                           |
+| os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f;}]                |
+| private network                      | 10.1.0.2                                                 |
+| progress                             | 0                                                        |
+| security_groups                      | default                                                  |
+| status                               | ACTIVE                                                   |
+| tenant_id                            | 56dc791650074cc9a2858bd5053a7116                         |
+| updated                              | 2014-12-08T17:41:47Z                                     |
+| user_id                              | 3dcc1572d7594a4eb6b043b819e415de                         |
++--------------------------------------+----------------------------------------------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    ubuntu@fluffy-master:~$ubuntu@fluffy-master:~$ nova live-migration \
+	9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    ubuntu@fluffy-master:~$ nova list
+    +--------------------------------------+----------------+-----------+------------+-------------+------------------+
+    | ID | Name | Status | Task State | Power State | Networks |
+    +--------------------------------------+----------------+-----------+------------+-------------+------------------+
+    | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | MIGRATING | migrating | Running | private=10.1.0.2 |
+    +--------------------------------------+----------------+-----------+------------+-------------+------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    ubuntu@fluffy-master:~$nova list
+    +--------------------------------------+----------------+--------+------------+-------------+------------------+
+    | ID | Name | Status | Task State | Power State | Networks |
+    +--------------------------------------+----------------+--------+------------+-------------+------------------+
+    | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904 | trusty-migrate | ACTIVE | - | Running | private=10.1.0.2 |
+    +--------------------------------------+----------------+--------+------------+-------------+------------------+
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    ubuntu@fluffy-master:~$ nova show 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904
+    +--------------------------------------+----------------------------------------------------------+
+    | Property                             | Value                                                    |
+    +--------------------------------------+----------------------------------------------------------+
+    | OS-DCF:diskConfig                    | MANUAL                                                   |
+    | OS-EXT-AZ:availability_zone          | nova                                                     |
+    | OS-EXT-SRV-ATTR:host                 | fluffy-master                                            |
+    | OS-EXT-SRV-ATTR:hypervisor_hostname  | fluffy-master                                            |
+    | OS-EXT-SRV-ATTR:instance_name        | instance-00000002                                        |
+    | OS-EXT-STS:power_state               | 1                                                        |
+    | OS-EXT-STS:task_state                | -                                                        |
+    | OS-EXT-STS:vm_state                  | active                                                   |
+    | OS-SRV-USG:launched_at               | 2014-12-08T17:41:47.000000                               |
+    | OS-SRV-USG:terminated_at             | -                                                        |
+    | accessIPv4                           |                                                          |
+    | accessIPv6                           |                                                          |
+    | config_drive                         |                                                          |
+    | created                              | 2014-12-08T17:41:39Z                                     |
+    | flavor                               | m1.small (2)                                             |
+    | hostId                               | 97a1a99eaf8e1fab2ea7cb0be641ff55f2da5df4e68d0ecb62293e00 |
+    | id                                   | 9afb79e1-f07a-4c98-9d6c-9ce66dcbf904                     |
+    | image                                | Attempt to boot from volume - no image supplied          |
+    | key_name                             | fluffycloud                                              |
+    | metadata                             | {}                                                       |
+    | name                                 | trusty-migrate                                           |
+    | os-extended-volumes:volumes_attached | [{6419112b-bf40-4994-809f-12dce25f5f1f}]                 |
+    | private network                      | 10.1.0.2                                                 |
+    | progress                             | 0                                                        |
+    | security_groups                      | default                                                  |
+    | status                               | ACTIVE                                                   |
+    | tenant_id                            | 56dc791650074cc9a2858bd5053a7116                         |
+    | updated                              | 2014-12-08T17:41:47Z                                     |
+    | user_id                              | 3dcc1572d7594a4eb6b043b819e415de                         |
+    +--------------------------------------+----------------------------------------------------------+
+</code></pre>
+</div>
+
+<p>Pretty cool eh?  As always feedback is more than welcome.  Also, if you have specific OpenStack / Cinder related topics you might want to see more about, drop me a line or post a comment.</p>
+
+<p>Thanks!!!</p>
+
+
+      <footer class="entry-meta">
+        <span class="entry-tags"></span>
+        
+        <div class="social-share">
+  <ul class="socialcount socialcount-small inline-list">
+    <li class="facebook"><a href="https://www.facebook.com/sharer/sharer.php?u=/openstack-live-migration-with-cinder-backed-instances/" title="Share on Facebook"><span class="count"><i class="fa fa-facebook-square"></i> Like</span></a></li>
+    <li class="twitter"><a href="https://twitter.com/intent/tweet?text=/openstack-live-migration-with-cinder-backed-instances/" title="Share on Twitter"><span class="count"><i class="fa fa-twitter-square"></i> Tweet</span></a></li>
+    <li class="googleplus"><a href="https://plus.google.com/share?url=/openstack-live-migration-with-cinder-backed-instances/" title="Share on Google Plus"><span class="count"><i class="fa fa-google-plus-square"></i> +1</span></a></li>
+  </ul>
+</div><!-- /.social-share -->
+      </footer>
+    </div><!-- /.entry-content -->
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+    <div class="read-more">
+  
+    <div class="read-more-header">
+      <a href="" class="read-more-btn">Read More</a>
+    </div><!-- /.read-more-header -->
+    <div class="read-more-content">
+      <h3><a href="/cinder-providing-block-storage-for-more-than-just-nova/" title="Cinder - Block Storage for things other than Nova">Cinder - Block Storage for things other than Nova</a></h3>
+      <p># Cinder as storage for Docker (part 1 of 2)A lot of you may be familiar with Cinder, the OpenStack Block Storage project that's been aro...&hellip; <a href="/cinder-providing-block-storage-for-more-than-just-nova/">Continue reading</a></p>
+    </div><!-- /.read-more-content -->
+  
+  <div class="read-more-list">
+    
+      <div class="list-item">
+        <h4><a href="/2016/02/12/openstack-cinders-reference-implementation/" title="<span data-rel="title">OpenStack Cinders reference implementation</span>"><span data-rel="title">OpenStack Cinders reference implementation</span></a></h4>
+        <span>Published on February 12, 2016</span>
+      </div><!-- /.list-item -->
+    
+      <div class="list-item">
+        <h4><a href="/volume-attach-code-flow-in-cinder/" title="Volume attach code flow in Cinder">Volume attach code flow in Cinder</a></h4>
+        <span>Published on July 16, 2015</span>
+      </div><!-- /.list-item -->
+    
+  </div><!-- /.read-more-list -->
+</div><!-- /.read-more -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2016 John Griffith. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> using the <a href="https://mademistakes.com/work/hpstr-jekyll-theme/" rel="nofollow">HPSTR Theme</a>.</span>
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/assets/js/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<script src="/assets/js/scripts.min.js"></script>
+
+
+
+
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'jgriffith'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function () {
+            var s = document.createElement('script'); s.async = true;
+            s.type = 'text/javascript';
+            s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+            (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+        }());
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+	        
+
+</body>
+</html>
