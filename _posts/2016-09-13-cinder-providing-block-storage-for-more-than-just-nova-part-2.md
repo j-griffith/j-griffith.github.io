@@ -203,9 +203,4 @@ your service is running and it's status.
 
 ## Put it all together and demo in a video
 
-For those that weren't at OpenStack Days East last month or missed the
-presentations I've done with this, I've uploaded a screen-cast, but the
-format and quality is HORRIBLE.  I'll work on getting an updated version
-posted and make a note here when I have some free time.
-
-[crummy video](https://youtu.be/H0XH9G32lfc)
+[Screencast demo](http://www.youtube.com/watch?v=XnGfmDQMABs)
