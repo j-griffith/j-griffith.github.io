@@ -13,7 +13,7 @@ The context most think of when they consider Cinder is always "Block Storage for
 
 Given that Containers are the hottest thing since sliced bread these days, I thought it would be fun to post a little how to on how to use Cinder by itself with Containers.  For those of you that saw my presentation at the OpenStack Summit in Austin last spring, here's what I was trying to show you on stage when I lost my wifi connection.
 
-On that note, here's part 1 of a 2 part posting about using Cinder a little bit differently than you may have been doing previously.
+On that note, here's part 1 of a 2 part posting about using Cinder a little bit differently than you may have been doing previously.  For those that were at OpenStack Days East this is a follow up to the presentation I gave there, those [slides](2016-09-07-cinder-providing-block-storage-for-more-than-just-nova.md) are also available for those that missed it.
 
 ## A neat use case that works for me
 
