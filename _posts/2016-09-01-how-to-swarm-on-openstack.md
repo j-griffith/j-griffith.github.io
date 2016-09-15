@@ -7,6 +7,8 @@ comments: true
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 # Building a SWARM Cluster on your OpenStack Cloud
 
+Also available as a screen-cast with some narrative [here](https://youtu.be/Dh2BK7xm02o)
+
 ## Provisioning Instances with docker-machine
 Start with an env file (rather than deal with a bunch of cmd line args)
 
