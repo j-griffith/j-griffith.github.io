@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Cinder - Block Storage for things other than Nova</title>
+  <meta name="description" content="Cinder as storage for Docker (part 1 of 2)A lot of you may be familiar with Cinder, the OpenStack Block Storage project that’s been around for quite a while ...">
+
+  <!-- CSS files -->
+  <link rel="stylesheet" href="/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+
+  <link rel="canonical" href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova">
+  <link rel="alternate" type="application/rss+xml" title="I'm just sayin!" href="/feed.xml " />
+
+  <!-- Icons -->
+  <!-- 16x16 -->
+  <link rel="shortcut icon" href="/favicon.ico">
+  <!-- 32x32 -->
+  <link rel="shortcut icon" href="/favicon.png">
+</head>
+
+
+<body>
+  <div class="row">
+    <div class="col s12 m3">
+      <div class="table cover">
+        
+
+<div class="cover-card table-cell table-middle">
+  
+  <img src="/img/avatar.jpg" alt="" class="avatar">
+  
+  <a href="/" class="author_name">John Griffith</a>
+  <span class="author_job"></span>
+  <span class="author_bio mbm">Sofware Developer, Horseman, Sailor and Fly Fisherman.</span>
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item">
+        <a href="/">home</a>
+        <span>/</span>
+      </li>
+       
+      <li class="nav-item">
+        <a href="/archive/">Archive</a>
+        
+          <span>/</span>
+        
+      </li>
+          
+      <li class="nav-item">
+        <a href="/categories/">Categories</a>
+        
+          <span>/</span>
+        
+      </li>
+            
+      <li class="nav-item">
+        <a href="/tags/">Tags</a>
+        
+      </li>
+       
+    </ul>
+  </nav>
+  <script type="text/javascript">
+  // based on http://stackoverflow.com/a/10300743/280842
+  function gen_mail_to_link(hs, subject) {
+    var lhs,rhs;
+    var p = hs.split('@');
+    lhs = p[0];
+    rhs = p[1];
+    document.write("<a class=\"social-link-item\" target=\"_blank\" href=\"mailto");
+    document.write(":" + lhs + "@");
+    document.write(rhs + "?subject=" + subject + "\"><i class=\"fa fa-fw fa-envelope\"></i><\/a>");
+  }
+</script>
+<div class="social-links">
+  <ul>
+    
+    <li><a href="http://twitter.com/jdg_8" class="social-link-item" target="_blank"><i class="fa fa-fw fa-twitter"></i></a></li>
+    
+    <li><a href="http://plus.google.com/+JohnGriffith8" class="social-link-item" target="_blank"><i class="fa fa-fw fa-google-plus"></i> Google+</a></li>
+    <li><a href="http://linkedin.com/in/john-griffith-06080713" class="social-link-item" target="_blank"><i class="fa fa-fw fa-linkedin"></i></a></li>
+    
+    
+    
+    <li><a href="http://github.com/j-griffith" class="social-link-item" target="_blank"><i class="fa fa-fw fa-github"></i></a></li>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  </ul>
+</div>
+
+</div>
+
+      </div>
+    </div>
+    <div class="col s12 m9">
+      <div class="post-listing">
+        <a class="btn" href= "/" >
+  Home
+</a>
+
+
+
+<div id="post">
+  <header class="post-header">
+    <h1 title="Cinder - Block Storage for things other than Nova">Cinder - Block Storage for things other than Nova</h1>
+    <span class="post-meta">
+      <span class="post-date">
+        7 SEP 2016
+      </span>
+      •
+      <span class="read-time" title="Estimated read time">
+  
+  
+    15 mins read
+  
+</span>
+
+    </span>
+
+  </header>
+
+  <article class="post-content">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<h1 id="cinder-as-storage-for-docker-part-1-of-2">Cinder as storage for Docker (part 1 of 2)</h1>
+
+<p>A lot of you may be familiar with Cinder, the OpenStack Block Storage project that’s been around for quite a while now.  If you’re not, you should take a look at the series of blog posts my friend <a href="https://cloudarchitectmusings.com/">Ken Hui</a> at Rackspace put together, <a href="http://blog.rackspace.com/laying-cinder-block-volumes-in-openstack-part-1-the-basics">Laying Cinder Block</a>.  That’s a more detailed version of the presentation he and I gave at the Summit in Atlanta a couple years back.</p>
+
+<p>The context most think of when they consider Cinder is always “Block Storage for Nova Instances”.  The fact is however that it’s pretty useful outside of the traditional Nova context.  You can use Cinder as a powerful “Block Storage as a Service” resource for a number of use cases and environments.  Myself and a few other have been doing this for a number of years now, mostly with Bare Metal systems in our labs.</p>
+
+<p>Given that Containers are the hottest thing since sliced bread these days, I thought it would be fun to post a little how to on how to use Cinder by itself with Containers.  For those of you that saw my presentation at the OpenStack Summit in Austin last spring, here’s what I was trying to show you on stage when I lost my wifi connection.</p>
+
+<p>On that note, here’s part 1 of a 2 part posting about using Cinder a little bit differently than you may have been doing previously.  For those that were at OpenStack Days East this is a follow up to the presentation I gave there, those <a href="http://www.slideshare.net/jgriffith8/consuming-cinder-from-docker-65993634">slides</a> are also available for those that missed it.</p>
+
+<h2 id="a-neat-use-case-that-works-for-me">A neat use case that works for me</h2>
+
+<p>So one pattern that I’ve found myself using more and more that’s kind of interesting is that my development is a bit mixed.  Some times I’m doing things on an OpenStack Instance, other times on a workstation or bare metal server, and more recently working in Containers (ok, and sometimes public cloud… but we’ll let the one slide for now).</p>
+
+<p>What I found was that I could use my Cinder deployment (by itself, or as part of a full OpenStack deployment) to manage my storage needs across all three models fairly easily.  Even better, I could start working on something in one environment, and easily take my data with me to another.  I’ve now dones this with some build images and data base files not just from my workstation to a Nova Instance, but also now to Docker Containers.  As I change my app to run in various environments I just unplug the storage and plug it back in where I want it.  Kinda cool right?</p>
+
+<h2 id="cinder-doesnt-know-or-care-whos-consuming-it-mostly">Cinder doesn’t know or care who’s consuming it (mostly)</h2>
+
+<p>The biggest point of all of this is that for the most part, Cinder doesn’t know (or care) who or what is calling it’s API or even really what they’re doing with the resources.  It’s mostly just a control plane to bridge the differences between various backend storage devices.  What a caller chooses to do with those resources is up to them, and it doesn’t really matter if that’s a person using the respponse data to type in info on a cmd line, an automation script on a bare metal server, or in our case today a Docker Volume Plugin.</p>
+
+<p>I will reluctantly point out that over the years there have been some things that have crept into the code that make Cinder a bit more Nova aware (which is unfortunate) but it’s still pretty easy to work around.  Most of it is just things like requiring Instance UUID’s for attach (that’s a failry generic thing though) and also there are some backends that have snuck in some <em>features</em> that use Nova to help them out.  In this case today I’m focused on just using the LVM driver and iSCSI connectivity.  This also works for other iSCSI based backends including SolidFire and others.</p>
+
+<h2 id="a-cinder-plugin-for-docker">A Cinder plugin for Docker</h2>
+
+<p>Containers are hot, no doubt about it.  They’re useful, the provide some pretty awesome flexibility in terms of not only development, but more importantly are fanstastic when it comes to deployment.  So, while I’ve been using Cinder against my Bare Metal systems and OpenStack Cloud for a while, last fall I started doing more and more with Containers, so I decided it would be worthwhile to write a <a href="https://github.com/j-griffith/cinder-docker-driver">Cinder Plugin for Docker</a> that would allow me to use Cinder directly.</p>
+
+<h3 id="yes-this-has-been-done-before">Yes, this has been done before</h3>
+
+<p>So the first thing people pointed out was that “you can do this already”.  Yup, that’s true (ish), there are a number of offerings in the Container space that have created plugins for Docker that run on top of and consume Cinder.  Some fo them even work (some of them don’t).  None of them have much involvement from the Cinder community, and none of them are completely Cinder focused.</p>
+
+<p>Anyway, that’s all great, if you use one of those (or choose to use one in the future) good for you!  That’s awesome, but if you are looking for something that is “just” Cinder and is not maintained by a storage vendor maybe this will be of interest to you.</p>
+
+<p><em>Disclosure</em> Yes, I work for SolidFire/Netapp.  There’s no underlying interest here for me though other than Cinder and cool tech.  If you know me from the community I’m pretty good at keeping company and community interests seperate.  I’m also fortunate enough to work for some great folks that <em>get it</em> and understand the importance.</p>
+
+<h3 id="docker-volume-plugins">Docker Volume Plugins</h3>
+
+<p>Docker started offering a Volume API a few releases back, it’s actually really pretty simple.  You can read up on it a bit <a href="https://docs.docker.com/engine/extend/plugins_volume/">here</a> if you’re interested.</p>
+
+<p>The key here is that it’s pretty simple, and that’s a good… no that’s a <em>GREAT</em> thing.  You’ll notice if you poke around on that link that there are quite a few volume plugins available.  You also might notice that several of the devices listed out there also have Cinder plugins/drivers.</p>
+
+<h2 id="the-cinder-plugin">The Cinder plugin</h2>
+<p>All of the plugins are pretty similar in how they work, the majority of us choose to use golang and the now official Docker Plugins Helper module.  Between that and the awesome <a href="https://github.com/rackspace/gophercloud">Gophercloud</a> golang bindings for OpenStack started by RackSpace, creating the plugin was pretty easy.  The only effort here was the addition of some code to do the attach/detach of the Cinder volumes, even that though is still pretty trivial.  I just added some open-iscsi wrappers to the plugin and voila.</p>
+
+<p><em>warning</em> I’ve only implemented iSCSI.. because; well it’s my favorite.  Those that offer other options are more than welcome to submit PR’s if they’re interested.</p>
+
+<p>Here are some of the reasons for creating this plugin rather than just pointing to and using someone elses:</p>
+<ol>
+  <li>I happen to consider myself a bit of a Cinder expert</li>
+  <li>Vendor agnostic (my Github repo is mine)</li>
+  <li>I’m focused on just Cinder that’s it (other variants have other motivations)</li>
+  <li>Licenesed under the Unlicense so you don’t have to be afraid to contribute, sign a EULA etc.  (but please don’t start submitting stuff with copyright headers etc)</li>
+</ol>
+
+<h3 id="lets-get-started">Let’s get started</h3>
+<h5 id="pre-requisites">Pre Requisites</h5>
+
+<p>For Ubuntu:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>sudo apt-get install open-iscsi
+</code></pre>
+</div>
+
+<p>For RHEL variants:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>sudo yum install iscsi-initiator-utils
+</code></pre>
+</div>
+
+<p>Of course make sure you have Docker installed, I recommend 1.12 at this point.</p>
+
+<p>Currently the plugin is a simple daemon written in Golang.  You’ll need to isntall it on your Docker Node(s), edit a simple config file to point it to your Cinder Endpoint and fire it up.  I’ve recently created a systemd init service for this that the install script will create and set everything up for you.  So all you have to do is use curl, or wget and pull down the install script and run it as root (or with sudo)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>curl -sSL https://raw.githubusercontent.com/j-griffith/cinder-docker-driver/master/install.sh \
+| sudo sh
+</code></pre>
+</div>
+
+<p>Next we just set up a minimal config file so we can talk to our Cinder Endpoint (standard OpenStack stuff here), we’ll just create a json file with the needed credential info <code class="highlighter-rouge">/var/lib/cinder/dockerdriver/config.json</code>:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="w">    </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"HostUUID"</span><span class="p">:</span><span class="w"> </span><span class="s2">"82ee38eb-821b-42d0-8c61-c4974d0c8536"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"Endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://172.16.140.243:5000/v2.0"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"Username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"jdg"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"Password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NotMyPassword"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"TenantID"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3dce5dd10b414ac1b942aba8ce8558e7"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span></code></pre>
+</div>
+<p>Now, if you’ve used the install script you can just start the service:
+<code class="highlighter-rouge">sudo service cinder-docker-driver restart</code></p>
+
+<p>Verify everything came up properly:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ sudo service cinder-docker-driver status
+● cinder-docker-driver.service - "Cinder Docker Plugin daemon"
+   Loaded: loaded (/etc/systemd/system/cinder-docker-driver.service; enabled; vendor preset: enabled)
+   Active: active (running) since Thu 2016-09-08 23:44:06 UTC; 29min ago
+ Main PID: 13917 (cinder-docker-d)
+    Tasks: 6
+   Memory: 5.3M
+      CPU: 290ms
+   CGroup: /system.slice/cinder-docker-driver.service
+           └─13917 /usr/bin/cinder-docker-driver &amp;
+
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="getVolByName: `cvol-4`"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="querying volume: {Attachments:[] AvailabilityZone:nova Bootable:false ConsistencyGroupID: CreatedAt:2016-09-08T23:46:13.000000 Description:Docker volume. Encrypted:false Name:cvol-4 VolumeType:lvmdriver-1 ReplicationDriverData: ReplicationE
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="Found Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=info msg="Remove/Delete Volume: cvol-4"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="getVolByName: `cvol-4`"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="querying volume: {Attachments:[] AvailabilityZone:nova Bootable:false ConsistencyGroupID: CreatedAt:2016-09-08T23:46:13.000000 Description:Docker volume. Encrypted:false Name:cvol-4 VolumeType:lvmdriver-1 ReplicationDriverData: ReplicationE
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="Found Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="Remove/Delete Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:46:59Z" level=debug msg="Response from Delete: {ErrResult:{Result:{Body:&lt;nil&gt; Header:map[] Err:&lt;nil&gt;}}}\n"
+Sep 08 23:47:07 box-1 cinder-docker-driver[13917]: time="2016-09-08T23:47:07Z" level=info msg="List volumes: "
+lines 1-20/20 (END)
+</code></pre>
+</div>
+<p>Then you can use journalctl to filter out the relative entries in syslog:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">ubuntu@box-1:~$ </span>journalctl -f -u cinder-docker-driver
+-- Logs begin at Thu 2016-09-08 20:52:15 UTC. --
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"getVolByName: </span><span class="sb">`</span>cvol-4<span class="sb">`</span><span class="s2">"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"querying volume: {Attachments:[] AvailabilityZone:nova Bootable:false ConsistencyGroupID: CreatedAt:2016-09-08T23:46:13.000000 Description:Docker volume. Encrypted:false Name:cvol-4 VolumeType:lvmdriver-1 ReplicationDriverData: ReplicationExtendedStatus: ReplicationStatus:disabled SnapshotID: SourceVolID: Status:available TenantID:979ddb6183834b9993954ca6de518c5a Metadata:map[readonly:False] Multiattach:false ID:677a821b-e33b-44b5-8fb3-38315e832216 Size:1 UserID:e763fc47a2854b15a9f6b85aea2ae3f1}</span><span class="se">\n</span><span class="s2">"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"Found Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>info <span class="nv">msg</span><span class="o">=</span><span class="s2">"Remove/Delete Volume: cvol-4"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"getVolByName: </span><span class="sb">`</span>cvol-4<span class="sb">`</span><span class="s2">"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"querying volume: {Attachments:[] AvailabilityZone:nova Bootable:false ConsistencyGroupID: CreatedAt:2016-09-08T23:46:13.000000 Description:Docker volume. Encrypted:false Name:cvol-4 VolumeType:lvmdriver-1 ReplicationDriverData: ReplicationExtendedStatus: ReplicationStatus:disabled SnapshotID: SourceVolID: Status:available TenantID:979ddb6183834b9993954ca6de518c5a Metadata:map[readonly:False] Multiattach:false ID:677a821b-e33b-44b5-8fb3-38315e832216 Size:1 UserID:e763fc47a2854b15a9f6b85aea2ae3f1}</span><span class="se">\n</span><span class="s2">"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"Found Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"Remove/Delete Volume ID: 677a821b-e33b-44b5-8fb3-38315e832216"</span>
+Sep 08 23:46:59 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:46:59Z"</span> <span class="nv">level</span><span class="o">=</span>debug <span class="nv">msg</span><span class="o">=</span><span class="s2">"Response from Delete: {ErrResult:{Result:{Body:&lt;nil&gt; Header:map[] Err:&lt;nil&gt;}}}</span><span class="se">\n</span><span class="s2">"</span>
+Sep 08 23:47:07 box-1 cinder-docker-driver[13917]: <span class="nb">time</span><span class="o">=</span><span class="s2">"2016-09-08T23:47:07Z"</span> <span class="nv">level</span><span class="o">=</span>info <span class="nv">msg</span><span class="o">=</span><span class="s2">"List volumes: "</span>
+</code></pre>
+</div>
+
+<p>That’s about it, the plugin should get picked up by your Docker Daemon and be ready to accept requests.  Couple of things to look out for:</p>
+
+<ol>
+  <li>
+    <p>You have to use V2.0 as your endpoint for now, GopherCloud chose to implement extensions (like Attach) as versioned items instead of extensions which is what they currently are.   Discovery works as long as it ends up being V2.0, but V1 or V3 won’t work.  Microversioning support is going to create some consumer issues here I think but we’ll cross that bridge when we come to it.</p>
+  </li>
+  <li>
+    <p>If you get weird error messages on startup about username and/or TenantID it’s almost always an issue with your TenantID so start there</p>
+  </li>
+  <li>
+    <p>It never hurts to restart the Docker Daemon on your node after you install the Plugin just to be safe</p>
+  </li>
+  <li>
+    <p>We expect/look for the config.json file in /var/lib/cinder/dockerdriver/ but you can specifiy this with the –config flag.</p>
+  </li>
+</ol>
+
+<h4 id="using-the-plugin-via-docker">Using the Plugin via Docker</h4>
+
+<p>So that’s about it as far as install and setup.  Now you can access your Cinder service from the Docker volume API.  This means you can do things like use the Docker Volumes CLI to do things, as well as add Volume arguments to your Docker run commands and even your compose file.</p>
+
+<h5 id="docker-volume-cli">Docker Volume CLI</h5>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ docker volume --help
+
+Usage:     docker volume COMMAND
+
+Manage Docker volumes
+
+Options:
+      --help   Print usage
+
+Commands:
+  create      Create a volume
+  inspect     Display detailed information on one or more volumes
+  ls          List volumes
+  rm          Remove one or more volumes
+
+Run 'docker volume COMMAND --help' for more information on a command.
+</code></pre>
+</div>
+
+<p>Let’s look at a simple create example:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ docker volume create -d cinder -o size=1 --name demovol
+
+</code></pre>
+</div>
+
+<p>Now list using Dockers API:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ docker volume ls
+DRIVER              VOLUME NAME
+cinder              demovol
+</code></pre>
+</div>
+
+<p>Cool.. how about checking with Cinder:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ cinder list
+
++--------------------------------------+-----------+---------+------+-------------+----------+-------------+
+| ID                                   | Status    | Name    | Size | Volume Type | Bootable | Attached to |
++--------------------------------------+-----------+---------+------+-------------+----------+-------------+
+| 21a42614-c381-4bbc-b1d0-8498014f2d65 | available | demovol | 1    | lvmdriver-1 | false    |             |
++--------------------------------------+-----------+---------+------+-------------+----------+-------------+
+$
+</code></pre>
+</div>
+<p>I know, I know.. big deal, we can create a volume.</p>
+
+<p>Let’s try something a little more interesting; let’s spin up a container and specify a volume to be created at the same time, we can do this using the Docker Run command, or via a Dockerfile.</p>
+
+<h5 id="docker-run-command">Docker Run command</h5>
+
+<p>Syntax to add a persistent storage volume to your conatiner at launch.  Notice that the Plugin will first check to see if the Volume already exists or not, if it does NOT it will create it for you using the info provided or defaults, if it does exist it will just do the attach and mount for you.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ docker run -v demovol-2:/Data --volume-driver=cinder -i -t ubuntu /bin/bash
+$ cinder list
+
++--------------------------------------+-----------+-----------+------+-------------+----------+--------------------------------------+
+| ID                                   | Status    | Name      | Size | Volume Type | Bootable | Attached to                          |
++--------------------------------------+-----------+-----------+------+-------------+----------+--------------------------------------+
+| 08c0c2af-4f91-4488-82a7-96bd020e8c00 | in-use    | demovol-2 | 1    | lvmdriver-1 | false    | 969bd5f5-64e3-433e-a248-04c3f7899a45 |
+| 21a42614-c381-4bbc-b1d0-8498014f2d65 | available | demovol   | 1    | lvmdriver-1 | false    |                                      |
++--------------------------------------+-----------+-----------+------+-------------+----------+--------------------------------------+
+$
+
+</code></pre>
+</div>
+
+<p>So now you’ll have Cinder volume (demovol-2) mounted and formatted with ext4 at /Data inside your container.</p>
+
+<h5 id="docker-compose">docker-compose</h5>
+
+<p>I like compose, automation is bestest….</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>web:
+  environment:
+    - "reschedule:on-node-failure"
+    - "constraint:node!=swarm-master"
+  image: jgriffith/jgriffith-webbase
+  ports:
+     - "80:80"
+  links:
+    - "redis:redis"
+redis:
+  environment:
+    - "reschedule:on-node-failure"
+  image: redis
+  volumes:
+    - "demovol:/data"
+  volume_driver: cinder
+</code></pre>
+</div>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>So these are pretty trivial examples, but it’s pretty easy to extend these examples into more <em>complex</em> builds.  I’ve been using this setup for a while now to host a number of things ranging from a <a href="https://github.com/vmware/harbor">Harbor Docker Registry</a> (images and DB backed by seperate cinder-volumes and running on a Nova Instance).  Other simple things are backing for a Redis store that I use as a simple message queue for a CI system I run, and another application I have where I’m running a Redis DB container that is persisting it’s data to a Cinder volume.  There’s quite a few things in my lab using Cinder now, some of those things are Nova Instances, but more and more of them lately are something else.</p>
+
+<p>The key take away here however is that Cinder is a lot more flexible than people might think.  It doesn’t have any real hard dependencies on Nova, Glance etc. It’s just about managing a pool of storage via the control plane and it leaves it up to the consumer to connect it however/wherever it wants.</p>
+
+<p>I’d love to hear your feedback, and try and answer any questions you might have.  Thanks for reading!</p>
+
+<h2 id="next-time">Next time</h2>
+
+<p>You can also use this with Swarm, coming up next we’ll go through how you can quickly and easily deploy a Swarm cluster on your OpenStack cloud and use the Cinder driver to keep persistent data in your Swarm Cluster and automatically move the volume across nodes in failover scenarios.  In the meantime, if you’re interested check it out, feel free to suggest improvements, raise issues or submit PRs.</p>
+
+<p>Before you ask… Kubernetes is very different.  It doesn’t actually use Docker’s Volume API, and with the exception of some experimental code in the different Cloud Provider drivers it also doesn’t do things like dynamic provisioning (create volumes).  It’s a completely different animal, and does things it’s own way.  TLDR if you’re using Kubernetes, this doesn’t really buy you anything.</p>
+
+<p>If you want more info on why this, and not some of the existing projects (including Kuryr) I’m happy to provide my opinions…  Thanks!!</p>
+
+  </article>
+</div>
+
+<div class="share-buttons">
+  <h6>Share on: </h6>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova" class="twitter btn" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova" class="google-plus btn" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- end share-buttons -->
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'jgriffith';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+        <footer>
+  &copy; 2016 John Griffith. Powered by <a href="http://jekyllrb.com/">Jekyll</a>, <a href="http://github.com/renyuanz/leonids/">leonids theme</a>
+  <br>Thoughts and opinions expressed here are my own and not affiliated with my
+  employer.
+</footer>
+
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="/js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+</body>
+</html>

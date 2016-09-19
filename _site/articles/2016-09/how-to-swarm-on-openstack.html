@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>How to Swarm on OpenStack</title>
+  <meta name="description" content="Building a SWARM Cluster on your OpenStack CloudAlso available as a screen-cast with some narrative hereProvisioning Instances with docker-machineStart with ...">
+
+  <!-- CSS files -->
+  <link rel="stylesheet" href="/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+
+  <link rel="canonical" href="/articles/2016-09/how-to-swarm-on-openstack">
+  <link rel="alternate" type="application/rss+xml" title="I'm just sayin!" href="/feed.xml " />
+
+  <!-- Icons -->
+  <!-- 16x16 -->
+  <link rel="shortcut icon" href="/favicon.ico">
+  <!-- 32x32 -->
+  <link rel="shortcut icon" href="/favicon.png">
+</head>
+
+
+<body>
+  <div class="row">
+    <div class="col s12 m3">
+      <div class="table cover">
+        
+
+<div class="cover-card table-cell table-middle">
+  
+  <img src="/img/avatar.jpg" alt="" class="avatar">
+  
+  <a href="/" class="author_name">John Griffith</a>
+  <span class="author_job"></span>
+  <span class="author_bio mbm">Sofware Developer, Horseman, Sailor and Fly Fisherman.</span>
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item">
+        <a href="/">home</a>
+        <span>/</span>
+      </li>
+       
+      <li class="nav-item">
+        <a href="/archive/">Archive</a>
+        
+          <span>/</span>
+        
+      </li>
+          
+      <li class="nav-item">
+        <a href="/categories/">Categories</a>
+        
+          <span>/</span>
+        
+      </li>
+            
+      <li class="nav-item">
+        <a href="/tags/">Tags</a>
+        
+      </li>
+       
+    </ul>
+  </nav>
+  <script type="text/javascript">
+  // based on http://stackoverflow.com/a/10300743/280842
+  function gen_mail_to_link(hs, subject) {
+    var lhs,rhs;
+    var p = hs.split('@');
+    lhs = p[0];
+    rhs = p[1];
+    document.write("<a class=\"social-link-item\" target=\"_blank\" href=\"mailto");
+    document.write(":" + lhs + "@");
+    document.write(rhs + "?subject=" + subject + "\"><i class=\"fa fa-fw fa-envelope\"></i><\/a>");
+  }
+</script>
+<div class="social-links">
+  <ul>
+    
+    <li><a href="http://twitter.com/jdg_8" class="social-link-item" target="_blank"><i class="fa fa-fw fa-twitter"></i></a></li>
+    
+    <li><a href="http://plus.google.com/+JohnGriffith8" class="social-link-item" target="_blank"><i class="fa fa-fw fa-google-plus"></i> Google+</a></li>
+    <li><a href="http://linkedin.com/in/john-griffith-06080713" class="social-link-item" target="_blank"><i class="fa fa-fw fa-linkedin"></i></a></li>
+    
+    
+    
+    <li><a href="http://github.com/j-griffith" class="social-link-item" target="_blank"><i class="fa fa-fw fa-github"></i></a></li>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  </ul>
+</div>
+
+</div>
+
+      </div>
+    </div>
+    <div class="col s12 m9">
+      <div class="post-listing">
+        <a class="btn" href= "/" >
+  Home
+</a>
+
+
+
+<div id="post">
+  <header class="post-header">
+    <h1 title="How to Swarm on OpenStack">How to Swarm on OpenStack</h1>
+    <span class="post-meta">
+      <span class="post-date">
+        1 SEP 2016
+      </span>
+      •
+      <span class="read-time" title="Estimated read time">
+  
+  
+    1 min read
+  
+</span>
+
+    </span>
+
+  </header>
+
+  <article class="post-content">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<h1 id="building-a-swarm-cluster-on-your-openstack-cloud">Building a SWARM Cluster on your OpenStack Cloud</h1>
+
+<p>Also available as a screen-cast with some narrative <a href="https://youtu.be/Dh2BK7xm02o">here</a></p>
+
+<h2 id="provisioning-instances-with-docker-machine">Provisioning Instances with docker-machine</h2>
+<p>Start with an env file (rather than deal with a bunch of cmd line args)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>export OS_FLAVOR_ID=6
+export OS_DOMAIN_NAME=Default
+export OS_IMAGE_ID=d5c276bc-cb70-42c4-9291-96f40a03a74c
+export OS_SSH_USER=ubuntu
+export OS_KEYPAIR_NAME=swarm
+export OS_PRIVATE_KEY_FILE=$HOME/.ssh/id_rsa
+export OS_SSH_USER=ubuntu
+export OS_TENANT_ID=$OS_PROJECT_ID
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">source dmachine.env</code></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ source dmachine.env
+$ for each in 1 2 3 4; do; docker-machine create -d openstack swarm-$each &amp;; done
+Running pre-create checks...
+Creating machine...
+Running pre-create checks...
+Creating machine...
+Running pre-create checks...
+Creating machine...
+Running pre-create checks...
+Creating machine...
+(swarm-2) Creating machine...
+(swarm-1) Creating machine...
+(swarm-3) Creating machine...
+(swarm-4) Creating machine...
+
+.......
+
+Docker is up and running!
+To see how to connect your Docker Client to the Docker Engine running on this
+virtual machine, run: docker-machine env swarm-4
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$  docker-machine ls
+NAME      ACTIVE   DRIVER      STATE     URL                         SWARM   DOCKER    ERRORS
+swarm-1   -        openstack   Running   tcp://172.16.140.107:2376           v1.12.1
+swarm-2   -        openstack   Running   tcp://172.16.140.106:2376           v1.12.1
+swarm-3   -        openstack   Running   tcp://172.16.140.105:2376           v1.12.1
+swarm-4   -        openstack   Running   tcp://172.16.140.108:2376           v1.12.1
+</code></pre>
+</div>
+
+<h2 id="initialize-a-swarm-cluster">Initialize a SWARM Cluster</h2>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ eval $(docker-machine env swarm-1)
+$ docker swarm init --advertise-addr 172.16.140.107 --listen-addr 172.16.140.107:2377
+Swarm initialized: current node (3x8vxeuhnh9mb83hzenudyl70) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join \
+        --token
+        SWMTKN-1-51ms3ga9iazxhn8ohh5n6whupxcch1bfdhmkvhnzq5hpzruwup-24hs62n9ih9w0bivvnlyr4k3m
+        \
+            172.16.140.144:2377
+
+            To add a manager to this swarm, run 'docker swarm join-token
+            manager' and follow the instructions.
+</code></pre>
+</div>
+<p>Join each of our nodes as workers</p>
+
+<p><strong>Repeat the following for each Swarm Node (swarm-&lt;2-4&gt;)</strong></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ eval $(docker-machine env swarm-2)
+$ docker swarm join \
+    --token
+    SWMTKN-1-51ms3ga9iazxhn8ohh5n6whupxcch1bfdhmkvhnzq5hpzruwup-24hs62n9ih9w0bivvnlyr4k3m
+    \
+        172.16.140.144:2377
+
+        To add a manager to this swarm, run 'docker swarm join-token
+        manager' and follow the instructions.
+This node joined a swarm as a worker.
+</code></pre>
+</div>
+
+<p><em>THAT’S IT!!!</em>  You’ve now got a basic Swarm Cluster depoloyed no your OpenStack Cloud!!</p>
+
+  </article>
+</div>
+
+<div class="share-buttons">
+  <h6>Share on: </h6>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=/articles/2016-09/how-to-swarm-on-openstack" class="twitter btn" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=/articles/2016-09/how-to-swarm-on-openstack" class="google-plus btn" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- end share-buttons -->
+
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'jgriffith';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+        <footer>
+  &copy; 2016 John Griffith. Powered by <a href="http://jekyllrb.com/">Jekyll</a>, <a href="http://github.com/renyuanz/leonids/">leonids theme</a>
+  <br>Thoughts and opinions expressed here are my own and not affiliated with my
+  employer.
+</footer>
+
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="/js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+
+</body>
+</html>
