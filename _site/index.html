@@ -10,17 +10,17 @@
   <meta name="description" content="Random, sometimes shallow thoughts about stuff.">
 
   <!-- CSS files -->
-  <link rel="stylesheet" href="/css/font-awesome.min.css">
-  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="https://j-griffith.github.io/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://j-griffith.github.io/css/main.css">
 
-  <link rel="canonical" href="/">
-  <link rel="alternate" type="application/rss+xml" title="I'm just sayin!" href="/feed.xml " />
+  <link rel="canonical" href="https://j-griffith.github.io/">
+  <link rel="alternate" type="application/rss+xml" title="I'm just sayin!" href="https://j-griffith.github.io/feed.xml " />
 
   <!-- Icons -->
   <!-- 16x16 -->
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="shortcut icon" href="https://j-griffith.github.io/favicon.ico">
   <!-- 32x32 -->
-  <link rel="shortcut icon" href="/favicon.png">
+  <link rel="shortcut icon" href="https://j-griffith.github.io/favicon.png">
 </head>
 
 
@@ -32,34 +32,34 @@
 
 <div class="cover-card table-cell table-middle">
   
-  <img src="/img/avatar.jpg" alt="" class="avatar">
+  <img src="https://j-griffith.github.io/img/avatar.jpg" alt="" class="avatar">
   
-  <a href="/" class="author_name">John Griffith</a>
+  <a href="https://j-griffith.github.io/" class="author_name">John Griffith</a>
   <span class="author_job"></span>
   <span class="author_bio mbm">Sofware Developer, Horseman, Sailor and Fly Fisherman.</span>
   <nav class="nav">
     <ul class="nav-list">
       <li class="nav-item">
-        <a href="/">home</a>
+        <a href="https://j-griffith.github.io/">home</a>
         <span>/</span>
       </li>
        
       <li class="nav-item">
-        <a href="/archive/">Archive</a>
+        <a href="https://j-griffith.github.io/archive/">Archive</a>
         
           <span>/</span>
         
       </li>
           
       <li class="nav-item">
-        <a href="/categories/">Categories</a>
+        <a href="https://j-griffith.github.io/categories/">Categories</a>
         
           <span>/</span>
         
       </li>
               
       <li class="nav-item">
-        <a href="/tags/">Tags</a>
+        <a href="https://j-griffith.github.io/tags/">Tags</a>
         
       </li>
        
@@ -109,174 +109,278 @@
     </div>
     <div class="col s12 m9">
       <div class="post-listing">
+        <a class="btn" href= "https://j-griffith.github.io/" >
+  Home
+</a>
+
+
+
+<div id="post">
+  <header class="post-header">
+    <h1 title=""></h1>
+    <span class="post-meta">
+      <span class="post-date">
         
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        13 SEP 2016
       </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova-part-2" class="post-title" title="Cinder - Block Stroage for things other than Nova (Part-2)">Cinder - Block Stroage for things other than Nova (Part-2)</a>
-      
-    </h4>
+      •
+      <span class="read-time" title="Estimated read time">
+  
+  
+    7 mins read
+  
+</span>
 
+    </span>
+
+  </header>
+
+  <article class="post-content">
+    <div class="blog-index">
     
-
-    </header>
-
     
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+    <h1 class="entry-title">
 
-    
 
-</section>
+    <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova-part-2">Cinder - Block Stroage for things other than Nova (Part-2)</a>
 
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        7 SEP 2016
-      </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova" class="post-title" title="Cinder - Block Storage for things other than Nova">Cinder - Block Storage for things other than Nova</a>
-      
-    </h4>
+</h1>
+<div class="entry-content"><meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    
+<p>In previous posts we started talking about using Cinder as a Block Storage
+provider for consumers other than Nova.  In particular our first example has
+been how to use Cinder by itself for Docker.  You can catch the first part of
+that here <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova">Cinder providing block storage for more than just Nova</a></p>
 
-    </header>
+<p>So there we walked through how to install the <a href="https://github.com/j-griffith/cinder-docker-driver/blob/master/README.md">Cinder Docker Driver</a> and configure
+things in a simple stand-alone setup. In this post we’re going to follow up on
+a few things and consume Cinder resources from a Swarm Cluster.</p>
 
-    
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+<p>If you’ve never built a Swarm cluster, it’s <em>super</em> easy using Docker 1.12.
+Even better, if you have an OpenStack Cloud internally, you can check out my
+post <a href="/articles/2016-09/how-to-swarm-on-openstack">How to Swarm on OpenStack</a>, or watch the <a href="https://youtu.be/Dh2BK7xm02o">Screen Cast</a> and try
+this out for yourself in about 10 minutes or so.</p>
 
-    
+<h2 id="a-little-background">A little Background</h2>
 
-</section>
+<p>We’re going to start from the poing where we already have a Swarm Cluster
+set up and ready to use.  For simplicity I’m going to use the Swarm
+deployed on my OpenStack Cloud. That means I’m using Nova Instances as
+my Swarm Nodes, BUT Nova doesn’t know anything about Cinder in this case.</p>
 
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        1 SEP 2016
-      </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2016-09/how-to-swarm-on-openstack" class="post-title" title="How to Swarm on OpenStack">How to Swarm on OpenStack</a>
-      
-    </h4>
+<p>The whole idea here is how to use Cinder just as Cinder by
+itself. This all works the same whether you’re Swarm is on</p>
 
-    
+<ul>
+  <li>Bare Metal</li>
+  <li>vSphere</li>
+  <li>VirtualBox</li>
+  <li>OpenStack</li>
+</ul>
 
-    </header>
+<p><strong>Whoa, hold up!!</strong></p>
 
-    
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+<p>Did I say use Cinder to provide storage for my Containers running in
+vSphere???</p>
 
-    
+<p><strong>YES I DID!!  and YES YOU CAN!</strong></p>
 
-</section>
+<p>The whole point of this post is that we only really <em>need</em> Cinder.</p>
 
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        12 FEB 2016
-      </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2016-02/openstack-cinders-reference-implementation" class="post-title" title="OpenStack Cinders reference implementation">OpenStack Cinders reference implementation</a>
-      
-    </h4>
+<h2 id="installingconfiguring-the-cinder-docker-driver-on-each-docker-node">Installing/Configuring the cinder-docker-driver on each Docker Node</h2>
 
-    
+<p>The following is much the same as we did in part 1 of our post,  we’ll go
+through the same steps, but we’re going to do everything through
+docker-machine.  You could certainly do this with your own bash, python or
+ansible or <em>whatever</em>, but docker-machine and the command line in my case works
+really well.</p>
 
-    </header>
+<h4 id="firs-well-use-curl-to-fetch-and-run-the-install-script-for-the-plugin">Firs we’ll use curl to fetch and run the install script for the Plugin</h4>
 
-    
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+<div class="highlighter-rouge"><pre class="highlight"><code>$ for each in $(docker-machine ls -q); do; docker-machine ssh $each "curl -sSl https://raw.githubusercontent.com/j-griffith/cinder-docker-driver/master/install.sh | sudo sh -"; done
+</code></pre>
+</div>
 
-    
+<p>Remember, we’re manually creating conf files because of the HostUUID issue.  Since we’re using OpenStack Instances
+here, might as well use their UUID’s for this.  I’ve created the files I need,
+they’re all the same with the exception of the <code class="highlighter-rouge">HostUUID:</code> entry:</p>
 
-</section>
+<div class="highlighter-rouge"><pre class="highlight"><code>$ for each in 1 2 3 4; do; docker-machine scp cdd.config.swarm-$each.json swarm-$each:~/config.json; done
+</code></pre>
+</div>
 
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        16 JUL 2015
-      </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2015-07/volume-attach-code-flow-in-cinder" class="post-title" title="Volume attach code flow in Cinder">Volume attach code flow in Cinder</a>
-      
-    </h4>
+<p>Now, just move the files into the default cinder dockerdriver directory using sudo…</p>
 
-    
+<div class="highlighter-rouge"><pre class="highlight"><code>$ for each in $(docker-machine ls -q); do; docker-machine ssh $each "sudo cp ~/config.json /var/lib/cinder/dockerdriver/config.json"; done
+</code></pre>
+</div>
 
-    </header>
+<p>Start the plugin daemon on each Node</p>
 
-    
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+<div class="highlighter-rouge"><pre class="highlight"><code>$ for each in $(docker-machine ls -q); do; docker-machine ssh $each "sudo service cinder-docker-driver start"; done
+</code></pre>
+</div>
 
-    
+<p>Verify the services all started up ok…</p>
 
-</section>
+<div class="highlighter-rouge"><pre class="highlight"><code>$ for each in $(docker-machine ls -q); do; docker-machine ssh $each "sudo service cinder-docker-driver status"; done
+● cinder-docker-driver.service - "Cinder Docker Plugin daemon"
+   Loaded: loaded (/etc/systemd/system/cinder-docker-driver.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2016-09-13 23:12:52 UTC; 8s ago
+ Main PID: 26875 (cinder-docker-d)
+    Tasks: 5
+   Memory: 1.2M
+      CPU: 11ms
+   CGroup: /system.slice/cinder-docker-driver.service
+           └─26875 /usr/bin/cinder-docker-driver &amp;
 
-<section class="post">
-  <header class="post-header">
-    <p class="post-meta">
-      <span class="post-date">
-        8 DEC 2014
-      </span>
-      
-    </p>
-    <h4>
-      <a href="/articles/2014-12/openstack-live-migration-with-cinder-backed-instances" class="post-title" title="OpenStack Live Migration With Cinder Backed Instances">OpenStack Live Migration With Cinder Backed Instances</a>
-      
-    </h4>
+Sep 13 23:12:52 swarm-1 systemd[1]: Started "Cinder Docker Plugin daemon".
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Using config file: /var/lib/cinder/dockerdriver/config.json"
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set InitiatorIFace to: default"
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set node InitiatorIP to: "
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set DefaultVolSz to: 1 GiB"
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set Endpoint to: http://172.16.140.243:5000/v2.0"
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set Username to: jdg"
+Sep 13 23:12:52 swarm-1 cinder-docker-driver[26875]: time="2016-09-13T23:12:52Z" level=info msg="Set TenantID to: 3dce5dd10b414ac1b942aba8ce8558e7"
+......
+</code></pre>
+</div>
 
-    
+<p>Easy enough… we’ve now succesfully added/configured the Cinder Plugin to each
+of our Swarm nodes.  We’re ready to deploy Swarm services and consume our
+Cinder storage.</p>
 
-    </header>
+<h2 id="our-first-swarm-service-that-consumes-cinder">Our first Swarm Service that Consumes Cinder</h2>
 
-    
-    <div class="post-description">
-      <p>
-      </p>
-    </div>
-    
+<p>The first thing we’ll do now is set our env back to our Swarm Manager Node, and
+create a Swarm network to use.  I just use the basic overlay driver, this
+network is really important.  We’ll specify this in our services and it will do
+things like enable the containers to communicate across nodes, and also do
+things like allow us to access a running container from any one of the Swarm
+Nodes IP addresses (regardless of where the Container is actually running).</p>
 
-    
+<div class="highlighter-rouge"><pre class="highlight"><code>$ eval $(docker-machine env swarm-1)
+$ docker network create --driver overlay swarm-net
+93huy770ajjyvk87hc3kmdabr
 
-</section>
+$ docker network list
+NETWORK ID          NAME                DRIVER              SCOPE
+4bc75c8415f5        bridge              bridge              local
+a4b3019e592a        docker_gwbridge     bridge              local
+4fce4f1ddbe0        host                host                local
+0by3ei97kci5        ingress             overlay             swarm
+afafb56eb377        none                null                local
+93huy770ajjy        swarm-net           overlay             swarm
+</code></pre>
+</div>
+
+<p>So you’ll notice we did a ```docker network list`` there, we want to make sure
+we have a network we can use with the SCOPE==swarm.</p>
+
+<p>At this point we’re going to build an “app”, albeit a very simple app.  Our app
+is going to consist of:</p>
+<ol>
+  <li>A redis service (that persists data to a Cinder Volume)</li>
+  <li>A web service that takes input via a simple web-page and stores the info to
+our Redis service</li>
+</ol>
+
+<p>The app is a modified version of the Moby-Counter app you’ve probably seen.
+One thing about Docker is that “counting” apps seem to be THE DEFACTO example,
+so why break with tradition here.</p>
+
+<h3 id="start-our-redis-service">Start our Redis Service</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>docker service create --name redis --network swarm-net --mount
+type=volume,src=redis-1,dst=/data,volume-driver=cinder -p 6379:6379 redis
+</code></pre>
+</div>
+
+<p>So that’s pretty simple, the syntax for service as it relates to Volumes is a
+little different, but it makes sense once you kinda walk through it.</p>
+
+<p>We want to “mount” something to the container when it starts up
+<code class="highlighter-rouge">--mount</code></p>
+
+<p>That thing we want to mount is a “volume”
+<code class="highlighter-rouge">type=volume</code></p>
+
+<p><code class="highlighter-rouge">src=redis-1</code>  Name of the src volume to create, or just use one if
+it already exists.</p>
+
+<p><code class="highlighter-rouge">dst=/data</code>  That’s where we’re going to mount the src volume in our
+container.</p>
+
+<p><code class="highlighter-rouge">volume-driver=cinder</code>  Tells the Docker Volume API <em>which</em> Volume
+Plugin/Service to use.</p>
+
+<p>That’s all ther is to it.  Swarm will figure out where to place the Container
+(since we’re not giving it any constraints anywhere one of the Swarm nodes is
+fair game), And it will communicate with the Cinder Plugin Daemon ON the Node
+that it places the Container.</p>
+
+<p>The Plugin takes care of all the details:</p>
+
+<ol>
+  <li>Check if Volume already exists</li>
+  <li>Create it if it doesn’t</li>
+  <li>Perform an iSCSI attach to the Swarm Node</li>
+  <li>Format the volume (only if it’s a new Volume that it created)</li>
+  <li>Mount the volume on the Swarm Node</li>
+  <li>Pass the Mount point into the Container.</li>
+</ol>
+
+<p>Now… if that Container “fails” for some reason, it will be restarted on
+another node.  In that case the above steps are repeated on the new Node.  So,
+you may have lost a node, or your container died, but your storage and
+“important” data are now efficiently portable across your Swarm Nodes!!!</p>
+
+<h3 id="start-up-our-web-server">Start up our web server</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ docker service create --name web --network swarm-net -p 80:80 \
+jgriffith/jgriffith-webbase
+</code></pre>
+</div>
+
+<p>That’s all there is to it, now you should be able to do <code class="highlighter-rouge">docker service
+list</code> and <code class="highlighter-rouge">docker service ps &lt;service-id&gt;</code> to get details about where
+your service is running and it’s status.</p>
+
+<h2 id="put-it-all-together-and-demo-in-a-video">Put it all together and demo in a video</h2>
+
+<p><a href="http://www.youtube.com/watch?v=XnGfmDQMABs">Screencast demo</a></p>
+</div>
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'jgriffith';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+</div>
+
+  </article>
+</div>
+
+<div class="share-buttons">
+  <h6>Share on: </h6>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=https://j-griffith.github.io/" class="twitter btn" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=https://j-griffith.github.io/" class="google-plus btn" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- end share-buttons -->
+
 
 
         <footer>
@@ -288,8 +392,8 @@
       </div>
     </div>
   </div>
-  <script type="text/javascript" src="/js/jquery-2.1.4.min.js"></script>
-<script type="text/javascript" src="/js/main.js"></script>
+  <script type="text/javascript" src="https://j-griffith.github.io/js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="https://j-griffith.github.io/js/main.js"></script>
 
 
 </body>

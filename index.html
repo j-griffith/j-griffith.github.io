@@ -1,4 +1,12 @@
 ---
-layout: post_listing
+layout: post
 permalink: /
 ---
+
+<div class="blog-index">
+    {% assign post=site.posts.first %}
+    {% assign content=post.content %}
+    {%include post_detail.html %}
+    <div id="disqus_thread"></div>
+    {% include disqus.html %}
+</div>
