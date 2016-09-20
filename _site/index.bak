@@ -6,14 +6,14 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Categories</title>
+  <title>I'm just sayin! | A Jekyll theme</title>
   <meta name="description" content="Random, sometimes shallow thoughts about stuff.">
 
   <!-- CSS files -->
   <link rel="stylesheet" href="/css/font-awesome.min.css">
   <link rel="stylesheet" href="/css/main.css">
 
-  <link rel="canonical" href="/categories/">
+  <link rel="canonical" href="/">
   <link rel="alternate" type="application/rss+xml" title="I'm just sayin!" href="/feed.xml " />
 
   <!-- Icons -->
@@ -109,23 +109,61 @@
     </div>
     <div class="col s12 m9">
       <div class="post-listing">
-          <div id="page">
-    <header class="page-header">
-      <h2>Categories</h2>
-    </header>
+        <a class="btn" href= "/" >
+  Home
+</a>
 
-    <article class="page-content">
-      <div class="tag-list">
+
+
+<div id="post">
+  <header class="post-header">
+    <h1 title=""></h1>
+    <span class="post-meta">
+      <span class="post-date">
+        
+      </span>
+      •
+      <span class="read-time" title="Estimated read time">
+  
+  
+    1 min read
+  
+</span>
+
+    </span>
+
+  </header>
+
+  <article class="post-content">
+    <div class="blog-index">
+      
+      
+      <h1 class="entry-title">
+
+
+    <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova-part-2">Cinder - Block Stroage for things other than Nova (Part-2)</a>
+
+</h1>
+<div class="entry-content"><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> <p>In previous posts we started talking about using Cinder as a Block Storage provider for consumers other than Nova. In particular our first example has been how to use Cinder by itself for Docker. You can catch the first part of that here <a href="/articles/2016-09/cinder-providing-block-storage-for-more-than-just-nova">Cinder providing block storage for more than just Nova</a></p> <p>So there we walked through how to install the <a href="https://github.com/j-griffith/cinder-docker-driver/blob/master/README.md">Cinder Docker Driver</a> and configure things in a simple stand-alone setup. In this post we’re going to follow up on a few things and consume Cinder resources from a Swarm Cluster.</p> <p>If you’ve never built a Swarm cluster, it’s <em>super</em> easy using Docker 1.12. Even better, if you have an OpenStack Cloud internally, you can check out my post <a href="/articles/2016-09/how-to-swarm-on-openstack">How to Swarm on OpenStack</a>, or watch the <a href="https://youtu.be/Dh2BK7xm02o">Screen Cast</a> and try this out for yourself in about 10 minutes or so.</p> <h2 id="a-little-background">A little Background</h2> <p>We’re going to start from the poing where we already have a Swarm Cluster set up and ready to use. For simplicity I’m going to use the Swarm deployed on my OpenStack Cloud. That means I’m using Nova Instances as my Swarm Nodes, BUT Nova...</div>
 
 </div>
 
-    </article>
+  </article>
+</div>
+
+<div class="share-buttons">
+  <h6>Share on: </h6>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=/" class="twitter btn" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=/" class="google-plus btn" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- end share-buttons -->
 
 
-  </div><!-- end page content -->
-
-
-  
 
         <footer>
   &copy; 2016 John Griffith. Powered by <a href="http://jekyllrb.com/">Jekyll</a>, <a href="http://github.com/renyuanz/leonids/">leonids theme</a>

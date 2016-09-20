@@ -1,0 +1,10 @@
+---
+layout: post
+permalink: /
+---
+
+<div class="blog-index">
+      {% assign post = site.posts.first %}
+      {% assign content = post.content | truncatewords:200 %}
+      {% include post_detail.html %}
+</div>

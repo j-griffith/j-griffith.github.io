@@ -37,6 +37,8 @@ layout: default
     {% if post.excerpt %}
     <div class="post-description">
       <p>
+        {{ post.content | split:"<!-- more -->" | first | strip_html | truncate:300 }}
+        <strong>Read more</strong>
       </p>
     </div>
     {% endif %}
