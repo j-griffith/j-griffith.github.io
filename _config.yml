@@ -49,4 +49,4 @@ owner:
   stackoverflow: #123456/username   from a "http://stackoverflow.com/users/123456/username" link
   linkedin: john-griffith-06080713
 
-theme: jekyll-theme-cayman
+theme: jekyll-theme-minimal
